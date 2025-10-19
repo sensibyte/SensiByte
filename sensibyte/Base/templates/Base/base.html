@@ -1,0 +1,180 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Cargador de antibiogramas{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap 5 CSS CDN -->
+    {# Ahora mismo esto valdrá sin problema alguno, pero hay que tener en cuenta que podríamos descargarlo y
+    dejarlo en los statics. Ya veré, de momento el CDN me valdrá #}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        {# Estos estilos son del template base, deben estar en todas las páginas. Ahora bien, crearé un
+            bloque extra dentro del header para cargar otros estilos o dependencias #}
+
+        .sidebar {
+          min-height: 100vh;
+          background-color: #f8f9fa;
+          padding: 1rem;
+          border-right: 1px solid #dee2e6;
+        }
+        .sidebar a {
+          display: block;
+          margin-bottom: 0.75rem;
+          color: #333;
+          text-decoration: none;
+        }
+        .sidebar a:hover {
+          text-decoration: underline;
+        }
+        .alert-error {
+          background-color: #f8d7da;  /* fondo rojo claro */
+          color: #842029;             /* texto rojo oscuro */
+          border: 1px solid #f5c2c7;
+          border-left: 5px solid #dc3545; /* franja lateral roja */
+          font-weight: 500;
+          padding: 0.75rem 1rem;
+          border-radius: 0.5rem;
+          display: flex;
+          align-items: center;
+        }
+
+        .alert-error i {
+          margin-right: 0.5rem;
+          font-size: 1.2rem;
+        }
+
+    </style>
+
+    <!-- Bloque extra header -->
+    {% block extra_head %}
+    {% endblock %}
+
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<!-- Navbar superior -->
+<header class="bg-primary text-white py-3 shadow-sm fixed-top">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <a href="{% url 'Base:home' %}">
+                <img src="{% static 'img/logo_sensibyte.png' %}" alt="Logo Sensibyte" style="height: 80px;"
+                     class="me-2">
+            </a>
+            <span style="font-size: 32px;">Sensibyte</span>
+        </div>
+    </div>
+</header>
+
+<!-- Contenedor principal: sidebar + contenido -->
+<div class="d-flex flex-grow-1" style="margin-top: 120px; min-height: 0;">
+
+    <!-- Sidebar izquierda -->
+    <nav class="sidebar col-md-3 col-lg-2">
+        <h6 class="fw-bold mb-3">Navegación</h6>
+
+        <!-- Enlace simple -->
+        <a href="{% url 'Base:home' %}">
+            <span class="me-1">🏠</span> Inicio
+        </a>
+
+        <!-- Grupo desplegable: Aislados -->
+        <div class="mb-2">
+            <a class="fw-semibold" data-bs-toggle="collapse" href="#submenuAislados" role="button" aria-expanded="false"
+               aria-controls="submenuAislados">
+                <span class="me-1">🧫</span> Aislados
+            </a>
+            <div class="collapse ps-3" id="submenuAislados">
+                <a href="{% url 'CRUD:cargar_antibiograma' %}" class="d-block">Cargar aislamientos</a>
+                <a href="{% url 'CRUD:listar_registros' %}" class="d-block">Registros aislamientos</a>
+            </div>
+        </div>
+
+        <!-- Grupo desplegable: Resultados. Esperaré a implementarlo para enlazarlo -->
+
+        <div class="mb-2">
+            <a class="fw-semibold" data-bs-toggle="collapse" href="#submenuResultados" role="button"
+               aria-expanded="false" aria-controls="submenuAislados">
+                <span class="me-1">📝</span> Resultados
+            </a>
+            <div class="collapse ps-3" id="submenuResultados">
+                <a href="" class="d-block">Explorador</a>
+                <a href="">Informes predefinidos</a>
+                <a href="">Análisis tendencias</a>
+            </div>
+        </div>
+
+        <!-- Último grupo: Administración -->
+        {% if request.user.is_authenticated and request.user.rol == "microbiologo" or request.user.is_superuser %}
+        <div class="mb-2">
+            <a href="{% url 'admin:index' %}" class="d-block">
+                <span class="me-1">🛠️</span> Admin</a>
+        </div>
+        {% endif %}
+
+        <!-- Logout -->
+        {% if user.is_authenticated %}
+        <!-- Django requiere POST para hacer logout -->
+        <form method="post" action="{% url 'Base:logout' %}" class="mb-2">
+            {% csrf_token %}
+            <button type="submit"
+                    class="d-block text-dark p-0 border-0 bg-transparent"
+                    onmouseover="this.style.textDecoration='underline';"
+                    onmouseout="this.style.textDecoration='none';">
+                <span class="me-1">🚪</span> Salir
+        </form>
+        {% endif %}
+
+    </nav>
+
+
+    <!-- Contenido principal -->
+    <main class="container-fluid py-4 px-4 col">
+
+        <!-- Bloque de mensajes compartido -->
+        {% if messages %}
+        <div class="messages-container">
+            {% for message in messages %}
+            <div class="alert
+                  {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %}
+                  alert-dismissible fade show" role="alert">
+                <i class="bi {% if message.tags == 'error' %}bi-shield-x{% elif message.tags == 'success' %}bi-check-circle{% elif message.tags == 'warning' %}bi-exclamation-triangle{% else %}bi-info-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Bloque de contenidos propios -->
+        {% block content %}
+        <div class="d-flex align-items-center mb-4">
+            {% if hospital and hospital.logo %}
+            <img src="{{ hospital.logo.url }}" alt="{{ hospital.nombre }}" style="height: 60px;" class="me-3">
+            {% endif %}
+            <h3>¡Bienvenid@ {{ user.get_full_name|default:user.username }}!</h3>
+        </div>
+        {% endblock %}
+
+    </main>
+</div>
+
+<!-- Footer -->
+<footer class="bg-light text-center py-3 text-muted border-top mt-auto">
+    &copy; {{ now|date:"Y" }} - Sistema de interpretación de antibiogramas
+</footer>
+
+<!-- Bootstrap JS (opcional) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+{# Puede que utilice JQuery más adelante, añado un bloque extra de scripts #}
+<!-- Bloque extra scripts -->
+{% block extra_footer %}{% endblock %}
+</body>
+</html>
