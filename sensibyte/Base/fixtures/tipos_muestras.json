@@ -1,0 +1,463 @@
+[
+  {
+    "nombre": "No especificado",
+    "snomed": "",
+    "loinc": []
+  },
+  {
+    "nombre": "Sangre",
+    "snomed": "878861003",
+    "loinc": [
+      "600-7"
+    ]
+  },
+  {
+    "nombre": "Absceso",
+    "snomed": "119371008",
+    "loinc": [
+      "595-9",
+      "75357-4"
+    ]
+  },
+  {
+    "nombre": "Ano",
+    "snomed": "119392008",
+    "loinc": [
+      "52966-9"
+    ]
+  },
+  {
+    "nombre": "Aspirado",
+    "snomed": "119295008",
+    "loinc": [
+      "532-2"
+    ]
+  },
+  {
+    "nombre": "Bronquial",
+    "snomed": "119391001",
+    "loinc": [
+      "604-9"
+    ]
+  },
+  {
+    "nombre": "Líquido gástrico",
+    "snomed": "258459007",
+    "loinc": [
+      "52967-7",
+      "9824-4"
+    ]
+  },
+  {
+    "nombre": "Aspirado traqueal",
+    "snomed": "445447003",
+    "loinc": [
+      "52973-5"
+    ]
+  },
+  {
+    "nombre": "Bilis",
+    "snomed": "119341000",
+    "loinc": [
+      "90270-0",
+      "53911-4"
+    ]
+  },
+  {
+    "nombre": "Bilis",
+    "snomed": "119341000",
+    "loinc": [
+      "90270-0",
+      "53911-4"
+    ]
+  },
+  {
+    "nombre": "Tejido",
+    "snomed": "309072003",
+    "loinc": [
+      "627-0",
+      "43408-4",
+      "540-5"
+    ]
+  },
+  {
+    "nombre": "Boca",
+    "snomed": "309185002",
+    "loinc": [
+      "73960-7"
+    ]
+  },
+  {
+    "nombre": "Cepillado bronquial",
+    "snomed": "309176002",
+    "loinc": [
+      "43442-3"
+    ]
+  },
+  {
+    "nombre": "Ojo",
+    "snomed": "119399004",
+    "loinc": [
+      "609-8"
+    ]
+  },
+  {
+    "nombre": "Cornea",
+    "snomed": "119400006",
+    "loinc": [
+      "60257-3"
+    ]
+  },
+  {
+    "nombre": "Derivación VP",
+    "snomed": "472942000",
+    "loinc": [
+      "74356-7"
+    ]
+  },
+  {
+    "nombre": "DIU",
+    "snomed": "473415003",
+    "loinc": []
+  },
+  {
+    "nombre": "Drenaje",
+    "snomed": "258455001",
+    "loinc": [
+      "607-2"
+    ]
+  },
+  {
+    "nombre": "Cuello uterino",
+    "snomed": "119395005",
+    "loinc": [
+      "43410-0"
+    ]
+  },
+  {
+    "nombre": "Útero",
+    "snomed": "127479004",
+    "loinc": [
+      "77193-1"
+    ]
+  },
+  {
+    "nombre": "Esputo",
+    "snomed": "119334006",
+    "loinc": [
+      "6460-0",
+      "539-7"
+    ]
+  },
+  {
+    "nombre": "Faringe",
+    "snomed": "472881004",
+    "loinc": [
+      "626-2"
+    ]
+  },
+  {
+    "nombre": "Quiste de Bartolino",
+    "snomed": "446128003",
+    "loinc": [
+      "74355-9"
+    ]
+  },
+  {
+    "nombre": "Heces",
+    "snomed": "119339001",
+    "loinc": [
+      "625-4",
+      "13318-1",
+      "16832-8",
+      "82303-9",
+      "44090-9",
+      "16836-9"
+    ]
+  },
+  {
+    "nombre": "Unidad de hemoderivado",
+    "snomed": "119300005",
+    "loinc": [
+      "599-1",
+      "68366-4"
+    ]
+  },
+  {
+    "nombre": "Herida",
+    "snomed": "119365002",
+    "loinc": [
+      "632-0",
+      "6462-6"
+    ]
+  },
+  {
+    "nombre": "Herida profunda",
+    "snomed": "16211051000119100",
+    "loinc": [
+      "17909-3",
+      "43407-6"
+    ]
+  },
+  {
+    "nombre": "Herida quirúrgica",
+    "snomed": "734380008",
+    "loinc": []
+  },
+  {
+    "nombre": "Herida superficial",
+    "snomed": "734381007",
+    "loinc": [
+      "17915-0"
+    ]
+  },
+  {
+    "nombre": "Hueso",
+    "snomed": "430268003",
+    "loinc": [
+      "602-3",
+      "75358-2"
+    ]
+  },
+  {
+    "nombre": "Dispositivo de implante",
+    "snomed": "439961009",
+    "loinc": [
+      "87931-2",
+      "78356-3"
+    ]
+  },
+  {
+    "nombre": "Lavado broncoalveolar",
+    "snomed": "258607008",
+    "loinc": [
+      "43441-5"
+    ]
+  },
+  {
+    "nombre": "Leche",
+    "snomed": "119321005",
+    "loinc": [
+      "20879-3"
+    ]
+  },
+  {
+    "nombre": "Leche materna",
+    "snomed": "119328004",
+    "loinc": [
+      "20695-3"
+    ]
+  },
+  {
+    "nombre": "Lentes de contacto",
+    "snomed": "258599007",
+    "loinc": [
+      "56714-9"
+    ]
+  },
+  {
+    "nombre": "Líquido amniótico",
+    "snomed": "119373006",
+    "loinc": [
+      "87929-6",
+      "596-7"
+    ]
+  },
+  {
+    "nombre": "Líquido sinovial",
+    "snomed": "119332005",
+    "loinc": [
+      "90278-3",
+      "621-3"
+    ]
+  },
+  {
+    "nombre": "Líquido cefalorraquídeo",
+    "snomed": "258450006",
+    "loinc": [
+      "88236-5",
+      "606-4"
+    ]
+  },
+  {
+    "nombre": "Líquido de diálisis",
+    "snomed": "258454002",
+    "loinc": [
+      "9822-8",
+      "30121-8",
+      "30045-9"
+    ]
+  },
+  {
+    "nombre": "Líquido pericárdico",
+    "snomed": "122571007",
+    "loinc": [
+      "90271-8",
+      "56715-6"
+    ]
+  },
+  {
+    "nombre": "Líquido peritoneal",
+    "snomed": "168139001",
+    "loinc": [
+      "90281-7",
+      "619-7"
+    ]
+  },
+  {
+    "nombre": "Líquido pleural",
+    "snomed": "418564007",
+    "loinc": [
+      "17279-1",
+      "618-9"
+    ]
+  },
+  {
+    "nombre": "Líquido corporal",
+    "snomed": "309051001",
+    "loinc": [
+      "610-6",
+      "611-4",
+      "535-5"
+    ]
+  },
+  {
+    "nombre": "Médula ósea",
+    "snomed": "119359002",
+    "loinc": [
+      "19126-2",
+      "75359-0",
+      "536-3"
+    ]
+  },
+  {
+    "nombre": "Genital",
+    "snomed": "119344008",
+    "loinc": [
+      "10352-3",
+      "75269-1"
+    ]
+  },
+  {
+    "nombre": "Nariz",
+    "snomed": "447154002",
+    "loinc": [
+      "10353-1"
+    ]
+  },
+  {
+    "nombre": "Nutrición parenteral",
+    "snomed": "119364003",
+    "loinc": [
+      "58940-8"
+    ]
+  },
+  {
+    "nombre": "Oído",
+    "snomed": "309165001",
+    "loinc": [
+      "608-0"
+    ]
+  },
+  {
+    "nombre": "Orina",
+    "snomed": "122575003",
+    "loinc": [
+      "630-4",
+      "541-3"
+    ]
+  },
+  {
+    "nombre": "Pene",
+    "snomed": "119397002",
+    "loinc": [
+      "14478-2"
+    ]
+  },
+  {
+    "nombre": "Piel pericatéter",
+    "snomed": "",
+    "loinc": []
+  },
+  {
+    "nombre": "Placenta",
+    "snomed": "119403008",
+    "loinc": [
+      "617-1"
+    ]
+  },
+  {
+    "nombre": "Punta de catéter",
+    "snomed": "119312009",
+    "loinc": [
+      "20566-6",
+      "19128-8"
+    ]
+  },
+  {
+    "nombre": "Semen",
+    "snomed": "119347001",
+    "loinc": [
+      "53558-3"
+    ]
+  },
+  {
+    "nombre": "Seno",
+    "snomed": "430238007",
+    "loinc": [
+      "87932-0",
+      "43307-8"
+    ]
+  },
+  {
+    "nombre": "Úlcera genital",
+    "snomed": "52041000087106",
+    "loinc": []
+  },
+  {
+    "nombre": "Uretra",
+    "snomed": "119393003",
+    "loinc": [
+      "10354-9"
+    ]
+  },
+  {
+    "nombre": "Vaginal",
+    "snomed": "119394009",
+    "loinc": [
+      "11261-5"
+    ]
+  },
+  {
+    "nombre": "Respiratorio inferior",
+    "snomed": "",
+    "loinc": [
+      "88585-5",
+      "89636-5"
+    ]
+  },
+  {
+    "nombre": "Piel",
+    "snomed": "608969007",
+    "loinc": []
+  },
+  {
+    "nombre": "Vulva",
+    "snomed": "397129002",
+    "loinc": []
+  },
+  {
+    "nombre": "Vag+Recto",
+    "snomed": "119394009+447955000",
+    "loinc": [
+      "72607-5"
+    ]
+  },
+  {
+    "nombre": "Agua",
+    "snomed": "119318008",
+    "loinc": [
+      "87957-7"
+    ]
+  }
+]

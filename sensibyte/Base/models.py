@@ -34,8 +34,11 @@
 #
 # https://docs.djangoproject.com/en/5.2/ref/models/
 
+
 from .global_models import *
 from .mixins import AliasMixin
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db.models import QuerySet
 
 
 # Puesto que pueden tener distintos alias, la mayor parte
@@ -46,10 +49,12 @@ class AntibioticoHospital(AliasMixin, models.Model):
     """ Modelo que define un Antibiotico asociado a un Hospital.
     Se relaciona con el Antibiotico a través de un FK
     en su campo "antibiotico" y con el Hospital con otro FK en
-    su campo "hospital". Hereda de AliasMixin para construir su
+    su campo "hospital". Posee un campo 'integer' para el ordenamiento
+    de objetos en los informes. Hereda de AliasMixin para construir su
     "alias"."""
     hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, related_name="antibioticos_hospital")
     antibiotico = models.ForeignKey(Antibiotico, on_delete=models.CASCADE, related_name="antibioticos")
+    orden_informe = models.IntegerField(default=0, help_text="Orden en el que aparecerá en los informes")
 
     class Meta:
         unique_together = ["hospital", "antibiotico"]  # combinación única por hospital
@@ -63,6 +68,11 @@ class AntibioticoHospital(AliasMixin, models.Model):
 
     def __str__(self):
         return f"{self.antibiotico.nombre}"  # Nombre del Antibiotico
+
+    @classmethod
+    def base_only(cls)->QuerySet['AntibioticoHospital']:
+        """Devuelve los objetos AntibioticoHospital cuyo padre no es una variante"""
+        return cls.objects.filter(antibiotico__es_variante=False)
 
 
 # Modelo MicroorganismoHospital
@@ -239,8 +249,9 @@ class CategoriaMuestraHospital(models.Model):
 class TipoMuestraHospital(AliasMixin, models.Model):
     """ Modelo que define un Tipo de Muestra asociado a un Hospital.
     Se relaciona con el TipoMuestra a través de un FK
-    en su campo "tipo_muestra" y con el Hospital con otro FK en
-    su campo "hospital". Hereda de AliasMixin para construir su "alias"."""
+    en su campo "tipo_muestra", con el Hospital con otro FK en
+    su campo "hospital" y con CategoriaMuestraHospital a través de otro FK en
+    su campo "categoria". Hereda de AliasMixin para construir su 'alias'."""
     hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, related_name="tipos_muestra_hospital")
     categoria = models.ForeignKey(CategoriaMuestraHospital, on_delete=models.CASCADE,
                                   related_name="tipos_muestra_hospital")
@@ -266,7 +277,7 @@ class MecResValoresPositivosHospital(AliasMixin, models.Model):
 class Registro(models.Model):
     """ Modelo que define un Registro importado de la BBDD del Hospital.
     Se relaciona con factores epidemiológicos mediante FKs. Además, incluye
-    el código encriptado del identificador del paciente."""
+    el código encriptado del identificador del paciente en el campo 'nh_hash'"""
     hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, related_name="registros")
     fecha = models.DateField()
     nh_hash = models.CharField(max_length=64)  # Identificador del paciente
@@ -304,13 +315,29 @@ class Aislado(models.Model):
         mecanismos = ", ".join([m.mecanismo.nombre for m in self.mecanismos_resistencia.all()])
         return f"{self.microorganismo}" + (f" ({mecanismos})" if mecanismos else "")
 
+    @property
+    def resultados_no_variantes(self)-> QuerySet["ResultadoAntibiotico"]:
+        """Devuelve un queryset de ResultadoAntibioticos del Aislado
+        que vienen de Antibioticos base, no variantes"""
+        return self.resultados.filter(
+            antibiotico__antibiotico__es_variante=False
+        ).select_related("antibiotico", "antibiotico__antibiotico").order_by("id")
+
+    @property
+    def resultados_variantes(self) -> QuerySet["ResultadoAntibiotico"]:
+        """Devuelve un queryset de ResultadoAntibioticos del Aislado
+        que vienen de Antibioticos variantes, no base"""
+        return self.resultados.filter(
+            antibiotico__antibiotico__es_variante=True
+        ).select_related("antibiotico", "antibiotico__antibiotico").order_by("id")
+
 
 # Modelo ResultadoAntibiotico
 class ResultadoAntibiotico(models.Model):
     """ Modelo que define un Resultado para un Antibiotico importado de la BBDD del Hospital.
     Se relaciona con el Aislado y Antibiotico mediante sendos FKs. Incluye la interpretación
-    de la categoría clínica mediante un string de máximo de 2 caracteres y la CMI, nullable,
-    por número decimal. """
+    de la categoría clínica mediante un string de máximo de 2 caracteres; la CMI, anulable,
+    por número decimal; y el halo de forma análoga a la CMI """
     aislado = models.ForeignKey(Aislado, on_delete=models.CASCADE, related_name="resultados")
     antibiotico = models.ForeignKey(AntibioticoHospital, on_delete=models.PROTECT)
 
@@ -323,7 +350,10 @@ class ResultadoAntibiotico(models.Model):
     ]
 
     interpretacion = models.CharField(max_length=2, choices=INTERPRETACION_CHOICES)
-    cmi = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True) # número decimal, nullable
+    cmi = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True) # número decimal, anulable
+    halo = models.PositiveSmallIntegerField(validators=[MinValueValidator(0),
+                                                        MaxValueValidator(50)]
+                                            , null=True, blank=True, verbose_name="Diámetro (mm)")
 
     class Meta:
         unique_together = ["aislado", "antibiotico"] # combinación única por hospital
@@ -333,12 +363,13 @@ class ResultadoAntibiotico(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.antibiotico} -> {self.interpretacion} ({self.cmi or "CMI ND"})"
+        return f"{self.antibiotico} -> {self.interpretacion} ({self.cmi or self.halo or "CMI ND"})"
 
 # Modelo AliasInterpretacion
 class AliasInterpretacionHospital(AliasMixin, models.Model):
     """ Modelo que define la categoría de interpretación que utiliza un Hospital. Hereda de AliasMixin
-     para construir estos "alias", y los asocia a una categoría preestablecida de interpretación. """
+     para construir estos "alias", y los asocia a una categoría preestablecida de interpretación.
+     De esta forma cada hospital puede crear sus claves de interpretación personalizadas"""
     hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, related_name="alias_interpretacion_hospital")
     interpretacion = models.CharField(max_length=2, choices=ResultadoAntibiotico.INTERPRETACION_CHOICES)
 
@@ -346,11 +377,11 @@ class AliasInterpretacionHospital(AliasMixin, models.Model):
         verbose_name = "Valor de interpretación"
         verbose_name_plural = "Valores de interpretaciones"
 
-    def get_standard(self, valor_input):
+    def get_standard_interp(self, valor):
         """ Devuelve la interpretación estándar ("S", "I", "R", "ND") según el valor recibido."""
-        valor_input = valor_input.strip().upper()
-        if self.match_alias(valor_input):
-            return self.interpretacion
+        valor = valor.strip().upper() # formateamos el valor
+        if self.match_alias(valor): # buscamos si está entre los alias
+            return self.interpretacion # si está, devolvemos la interpretación asociada
         return None
 
 # Modelo ReinterpretacionAntibiotico
@@ -376,101 +407,5 @@ class ReinterpretacionAntibiotico(models.Model):
         verbose_name_plural = "Reinterpretaciones EUCAST"
 
     def __str__(self): # Así queda resuelto a primera vista si hubo cambio con la nueva interpretación
-        return f"{self.resultado_original} → {self.interpretacion_nueva} ({self.version_eucast})"
+        return f"{self.resultado_original} -> {self.interpretacion_nueva} ({self.version_eucast})"
 
-
-# Modelo AntibioticoExtendido
-class AntibioticoExtendido(models.Model):
-    """ Modelo que define un Antibiotico que parte de un AntibioticoHospital padre. La razón es la siguiente:
-    EUCAST define distintas categorías clínicas para algunos antibióticos en ciertos grupos EUCAST en función
-    de la vía de administración o síndrome clínico, por ejemplo, Amoxicilina-clavulánico tiene distintos puntos
-    de corte en función de si la vía de administración es intravenosa o es oral para una infección que se origina
-    en el tracto urinario, o para ITU no complicada o para otras indicaciones. La forma de proceder será añadir
-    estos "antibióticos extendidos" para que se generen automáticamente en el proceso de carga de los resultados
-    de la BBDD de un hospital"""
-
-    hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, related_name="antibioticos_extendidos")
-    antibiotico = models.ForeignKey(AntibioticoHospital, on_delete=models.CASCADE,
-                                    related_name="antibioticos_extendidos")
-
-    # Criterios en base a microorganismo y muestra
-    grupo_eucast = models.ForeignKey(GrupoEucast, null=True, blank=True, on_delete=models.CASCADE)
-    microorganismo = models.ForeignKey(MicroorganismoHospital, null=True, blank=True, on_delete=models.CASCADE)
-    categorias_muestra = models.ManyToManyField(CategoriaMuestraHospital, blank=True)
-
-    # Criterios epidemiológicos
-    edad_min = models.PositiveSmallIntegerField(null=True, blank=True)
-    edad_max = models.PositiveSmallIntegerField(null=True, blank=True)
-    sexo = models.ForeignKey(SexoHospital, null=True, blank=True, on_delete=models.PROTECT)
-
-    s_cmi_max = models.FloatField(null=True, blank=True,
-                                  verbose_name="CMI máxima para Sensible (≤)",
-                                  help_text="Valores CMI ≤ este valor se interpretan como Sensible")
-
-    r_cmi_min = models.FloatField(null=True, blank=True,
-                                  verbose_name="CMI mínima para Resistente (>)",
-                                  help_text="Valores CMI > este valor se interpretan como Resistente")
-
-    nombre_variante = models.CharField(max_length=128, blank=True) # nombre de la variante, el "antibiótico extendido"
-    abr = models.CharField(max_length=10, unique=True) # abreviatura de la variante
-
-    class Meta:
-        unique_together = ["hospital", "antibiotico"] # combinación única antibiótico por hospital
-        verbose_name = "Regla de creación de antibiótico extendido"
-        verbose_name_plural = "Reglas de creación de antibióticos extendidos"
-
-    def interpret(self, cmi: float | None) -> str:
-        """ Metodo que se encarga de interpretar la categoría clínica de un AntibioticoExtendido
-        en base a los campos asociados a sus puntos de corte. Toma como argumento el valor float
-        de CMI del antibiótico base y devuelve el string de categoría clínica asociada. """
-        print(f"R cmi min: {self.r_cmi_min}, S cmi max: {self.s_cmi_max}")
-        if cmi is None:
-            return "ND"
-        if self.r_cmi_min is not None and cmi > self.r_cmi_min:
-            return "R"
-        elif self.s_cmi_max is not None and cmi <= self.s_cmi_max:
-            return "S"
-        return "I"
-
-    @classmethod
-    def get_applicable_rules(cls, antibiotico, microorganismo, grupo_eucast, edad, sexo, categoria_muestra):
-        """ Metodo que se encarga de seleccionar los AntibioticosExtendidos asociados a un AntibioticoHospital.
-        Aplicado en el metodo de carga de resultados de la BBDD de un hospital determina los AntibioticosExtendidos
-        que se han de crear según sus criterios definidos, e interpretar en base a sus puntos de corte. """
-
-        # Se filtra la query en primer lugar por el antibiótico
-        qs = cls.objects.filter(antibiotico=antibiotico)
-
-        # Si hay reglas asociadas a categorías de muestra, filtrar aquellas donde la categoría está incluida.
-        # Utilizaremos objetos Q para las querys: https://forum.djangoproject.com/t/whare-are-the-benefits-of-using-q-objects/7160
-        if categoria_muestra:
-            qs = qs.filter(models.Q(categorias_muestra__isnull=True) | models.Q(categorias_muestra=categoria_muestra))
-        else:
-            qs = qs.filter(categorias_muestra__isnull=True)
-
-        # Si hay reglas asociadas a microorganismo, filtrar aquellas donde el microorganismo esté incluido o genéricas
-        # (aquellas sin microorganismo asignado)
-        if microorganismo:
-            qs = qs.filter(models.Q(microorganismo=microorganismo) | models.Q(microorganismo__isnull=True))
-
-        # Si hay reglas asociadas a un grupo EUCAST, filtrar aquellas donde el grupo EUCAST esté incluido o genéricas
-        if grupo_eucast:
-            qs = qs.filter(models.Q(grupo_eucast=grupo_eucast) | models.Q(grupo_eucast__isnull=True))
-
-        # Si hay reglas asociadas a la edad, filtrar aquellas incluidas en el intervalo de edad apropiado
-        if edad is not None:
-            qs = qs.filter(models.Q(edad_min__lte=edad) | models.Q(edad_min__isnull=True))
-            qs = qs.filter(models.Q(edad_max__gte=edad) | models.Q(edad_max__isnull=True))
-
-        # Si hay reglas asociadas al sexo, filtrar aquellas donde el sexo esté incluido o genéricas
-        if sexo:
-            qs = qs.filter(models.Q(sexo=sexo) | models.Q(sexo__isnull=True))
-
-        # Devuelve la queryset de los objetos cls distintos finalmente filtrados
-        return qs.distinct()
-
-    def __str__(self):
-        etiqueta = f"{self.antibiotico}"
-        if self.nombre_variante:
-            etiqueta += f" ({self.nombre_variante})" # Antibiotico (nombre variante)
-        return etiqueta

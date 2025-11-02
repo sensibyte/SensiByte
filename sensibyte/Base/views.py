@@ -1,15 +1,15 @@
-# views.py: definiciones de las vistas de la aplicaci髇.
-# Las vistas contienen la l骻ica de negocio que conecta los Modelos con los Templates, procesan las peticiones HTTP
-# y devuelven las respuestas adecuadas (HTML, JSON, etc.). Son una pieza fundamental del paradigma de programaci髇
-# orientada a objetos MVT, variante del patr髇 MVC en el que la Vista es el Template y el Controller es el View.
+# views.py: definiciones de las vistas de la aplicaci贸n.
+# Las vistas contienen la l贸gica de negocio que conecta los Modelos con los Templates, procesan las peticiones HTTP
+# y devuelven las respuestas adecuadas (HTML, JSON, etc.). Son una pieza fundamental del paradigma de programaci贸n
+# orientada a objetos MVT, variante del patr贸n MVC en el que la Vista es el Template y el Controller es el View.
 #
 # En Django existen distintas formas de declarar las vistas, pero habitualmente se utilizan:
 #
 # Function-Based Views - Vistas basadas en funciones que admiten un request como argumento
-# Class-Based Views - Vistas basadas en Clases. Aceptan un Modelo que puede llevarse al contexto para las operaciones l骻icas
+# Class-Based Views - Vistas basadas en Clases. Aceptan un Modelo que puede llevarse al contexto para las operaciones l贸gicas
 #
-# Otras m醩 simples son TemplateView o RedirectView, que permiten un control total sobreescribiendo sus m閠odos.
-# Tambi閚 existen vistas incluidas por defecto para Autenticaci髇 en django.contrib.auth.views
+# Otras m谩s simples son TemplateView o RedirectView, que permiten un control total sobreescribiendo sus m茅todos.
+# Tambi茅n existen vistas incluidas por defecto para Autenticaci贸n en django.contrib.auth.views
 #
 # https://docs.djangoproject.com/en/5.2/topics/http/views/
 # https://docs.djangoproject.com/en/5.2/topics/class-based-views/ -> Class-Based Views
@@ -17,32 +17,25 @@
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
-from datetime import datetime
 
 class HomeView(LoginRequiredMixin, TemplateView):
-    """ Vista de la p醙ina de inicio. Se le pasa al contexto el hospital y la fecha actual.
-    Hereda de TemplateView, que acepta un template como argumento para su construcci髇. """
-    template_name = "Base/base.html" #
+    """ Vista de la p谩gina de inicio. Se le pasa al contexto el hospital y la fecha actual.
+    Hereda de TemplateView, que acepta un template como argumento para su construcci贸n.
+    ref: https://docs.djangoproject.com/en/5.2/topics/class-based-views/generic-display/#adding-extra-context"""
+    template_name = "Base/base.html" # El template base. Posee todos los bloques
 
     def get_context_data(self, **kwargs):
+        """M茅todo de inicializaci贸n del contexto de la vista"""
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        now = datetime.now()
 
         if user.is_superuser:
             context['hospital'] = None # Si es el superusuario no tiene hospital asociado
         else:
             # Si no es superusuario tiene un atributo hospital en su instancia
             context['hospital'] = getattr(user, 'hospital', None) # variable hospital pasada al contexto
-        context['now'] = now # variable now con la fecha y hora actual pasada al contexto
         return context
 
 class LogView(LoginView):
-    """ Vista de la p醙ina de login. Se le pasa la fecha actual al contexto"""
-    template_name = 'Base/login.html' # template para su construcci髇
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        now = datetime.now()
-        context['now'] = now # variable now con la fecha y hora actual pasada al contexto
-        return context
+    """ Vista de la p谩gina de login. Se le pasa la fecha actual al contexto"""
+    template_name = 'Base/login.html' # template para su construcci贸n

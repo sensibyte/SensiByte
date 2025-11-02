@@ -1,0 +1,98 @@
+[
+  {
+    "nombre": "Enterobacterales"
+  },
+  {
+    "nombre": "Pseudomonas spp."
+  },
+  {
+    "nombre": "Stenotrophomonas maltophilia"
+  },
+  {
+    "nombre": "Acinetobacter spp."
+  },
+  {
+    "nombre": "Staphylococcus spp."
+  },
+  {
+    "nombre": "Enterococcus spp."
+  },
+  {
+    "nombre": "Streptococcus groups A, B, C and G"
+  },
+  {
+    "nombre": "Streptococcus pneumoniae"
+  },
+  {
+    "nombre": "Viridans group streptococci"
+  },
+  {
+    "nombre": "Haemophilus influenzae"
+  },
+  {
+    "nombre": "Moraxella catarrhalis"
+  },
+  {
+    "nombre": "Neisseria gonorrhoeae"
+  },
+  {
+    "nombre": "Neisseria meningitidis"
+  },
+  {
+    "nombre": "Anaerobic bacteria"
+  },
+  {
+    "nombre": "Helicobacter pylori"
+  },
+  {
+    "nombre": "Listeria monocytogenes"
+  },
+  {
+    "nombre": "Pasteurella spp."
+  },
+    {
+    "nombre": "Campylobacter jejuni and C. coli"
+  },
+  {
+    "nombre": "Corynebacterium spp. other than C. diphtheriae and C. ulcerans"
+  },
+  {
+    "nombre": "Corynebacterium diphtheriae and C. ulcerans"
+  },
+  {
+    "nombre": "Aerococcus sanguinicola and A. urinae"
+  },
+  {
+    "nombre": "Kingella kingae"
+  },
+  {
+    "nombre": "Aeromonas spp."
+  },
+  {
+    "nombre": "Achromobacter xylosoxidans"
+  },
+  {
+    "nombre": "Vibrio spp."
+  },
+  {
+    "nombre": "Bacillus spp. (except Bacillus anthracis )"
+  },
+    {
+    "nombre": "Bacillus anthracis"
+  },
+    {
+    "nombre": "Brucella melitensis"
+  },
+    {
+    "nombre": "Burkholderia pseudomallei"
+  },
+    {
+    "nombre": "Burkholderia cepacia complex"
+  },
+    {
+    "nombre": "Legionella pneumophila"
+  },
+    {
+    "nombre": "Mycobacterium tuberculosis"
+  }
+]

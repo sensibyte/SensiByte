@@ -1,0 +1,14 @@
+[
+  {
+    "nombre": "Atención Primaria"
+  },
+  {
+    "nombre": "Urgencias"
+  },
+  {
+    "nombre": "Hospitalización"
+  },
+  {
+    "nombre": "Consultas Externas"
+  }
+]

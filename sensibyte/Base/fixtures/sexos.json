@@ -1,0 +1,14 @@
+[
+  {
+    "codigo": "M",
+    "descripcion": "Hombre"
+  },
+  {
+    "codigo": "F",
+    "descripcion": "Mujer"
+  },
+  {
+    "codigo": "X",
+    "descripcion": "Desconocido"
+  }
+]

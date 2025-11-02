@@ -1,0 +1,62 @@
+[
+  {
+    "nombre": "BLEE",
+    "descripcion": "Beta-lactamasa de espectro extendido",
+    "grupos_eucast": [
+      "Enterobacterales",
+      "Pseudomonas sp."
+    ],
+    "microorganismos": []
+  },
+  {
+    "nombre": "Carbapenemasa",
+    "descripcion": "Producción de carbapenemasa",
+    "grupos_eucast": [
+      "Enterobacterales",
+      "Pseudomonas spp.",
+      "Acinetobacter spp."
+    ],
+    "microorganismos": []
+  },
+    {
+    "nombre": "SARM",
+    "descripcion": "Staphylococcus aureus resistente a meticilina",
+    "grupos_eucast": [
+      "Staphylococcus spp."
+    ],
+    "microorganismos": [
+      "Staphylococcus aureus"
+    ]
+  },
+  {
+    "nombre": "EVR",
+    "descripcion": "Enterococcus spp. resistentes a vancomicina",
+    "grupos_eucast": [
+      "Enterococcus spp."
+    ],
+    "microorganismos": [
+      "Enterococcus faecalis",
+      "Enterococcus faecium"
+    ]
+  },
+  {
+    "nombre": "MDR",
+    "descripcion": "Pseudomonas aeruginosa MDR",
+    "grupos_eucast": [
+      "Pseudomonas sp."
+    ],
+    "microorganismos": [
+      "Pseudomonas aeruginosa"
+    ]
+  },
+  {
+    "nombre": "XDR",
+    "descripcion": "Pseudomonas aeruginosa XDR",
+    "grupos_eucast": [
+      "Pseudomonas sp."
+    ],
+    "microorganismos": [
+      "Pseudomonas aeruginosa"
+    ]
+  }
+]

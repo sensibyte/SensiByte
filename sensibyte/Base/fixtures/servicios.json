@@ -1,0 +1,146 @@
+[
+  {
+    "nombre": "Atención Primaria"
+  },
+  {
+    "nombre": "Urgencias"
+  },
+  {
+    "nombre": "Admisión y Documentación Clínica"
+  },
+  {
+    "nombre": "Alergología"
+  },
+  {
+    "nombre": "Análisis Clínicos y Bioquímica Clínica"
+  },
+  {
+    "nombre": "Anatomía Patológica"
+  },
+  {
+    "nombre": "Anestesia y Reanimación"
+  },
+  {
+    "nombre": "Angiología y Cirugía Vascular"
+  },
+  {
+    "nombre": "Aparato Digestivo"
+  },
+  {
+    "nombre": "Cardiología"
+  },
+  {
+    "nombre": "Cirugía General y Digestiva"
+  },
+  {
+    "nombre": "Cirugía Cardiovascular"
+  },
+  {
+    "nombre": "Cirugía Oral y Maxilofacial"
+  },
+  {
+    "nombre": "Cirugía Pediátrica"
+  },
+  {
+    "nombre": "Cirugía Plástica y Reparadora"
+  },
+  {
+    "nombre": "Cirugía Torácica"
+  },
+  {
+    "nombre": "Dermatología Médicoquirúrgica"
+  },
+  {
+    "nombre": "Endocrinología"
+  },
+  {
+    "nombre": "Farmacia Hospitalaria"
+  },
+  {
+    "nombre": "Farmacología"
+  },
+  {
+    "nombre": "Geriatría"
+  },
+  {
+    "nombre": "Hematología y Hemoterapia"
+  },
+  {
+    "nombre": "Medicina Intensiva"
+  },
+  {
+    "nombre": "Medicina Interna"
+  },
+  {
+    "nombre": "Medicina Nuclear"
+  },
+  {
+    "nombre": "Medicina Preventiva y Salud Pública"
+  },
+  {
+    "nombre": "Medicina Nuclear"
+  },
+  {
+    "nombre": "Microbiología"
+  },
+  {
+    "nombre": "Nefrología"
+  },
+  {
+    "nombre": "Neumología"
+  },
+  {
+    "nombre": "Neurocirugía"
+  },
+  {
+    "nombre": "Neurofisiología Clínica"
+  },
+  {
+    "nombre": "Neurología"
+  },
+  {
+    "nombre": "Obstetricia y Ginecología"
+  },
+  {
+    "nombre": "Oftalmología"
+  },
+  {
+    "nombre": "Oncología Médica"
+  },
+  {
+    "nombre": "Oncología Radioterápica"
+  },
+  {
+    "nombre": "Oncología Médica"
+  },
+  {
+    "nombre": "Otorrinolaringología"
+  },
+  {
+    "nombre": "Pediatría"
+  },
+  {
+    "nombre": "Prevención de Riesgos Laborales"
+  },
+  {
+    "nombre": "Psiquiatría"
+  },
+  {
+    "nombre": "Radiodiagnóstico"
+  },
+  {
+    "nombre": "Radiofísica y Protección Radiológica"
+  },
+  {
+    "nombre": "Rehabilitación"
+  },
+  {
+    "nombre": "Reumatología"
+  },
+  {
+    "nombre": "Traumatología y Cirugía Ortopédica"
+  },
+  {
+    "nombre": "Urología"
+  }
+]

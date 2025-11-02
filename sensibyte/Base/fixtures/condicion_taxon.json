@@ -1,0 +1,271 @@
+[
+  {
+    "scope": "grupo",
+    "incluye": [
+      "Enterobacterales"
+    ],
+    "excluye": [],
+    "descripcion": "Enterobacterales"
+  },
+  {
+    "scope": "grupo",
+    "incluye": [
+      "Enterobacterales"
+    ],
+    "excluye": ["Escherichia coli"],
+    "descripcion": "Enterobacterales no E. coli"
+  },
+  {
+    "scope": "especie",
+    "incluye": [
+      "Escherichia coli"
+    ],
+    "excluye": [],
+    "descripcion": "Sólo E. coli"
+  },
+  {
+    "scope": "especie",
+    "incluye": [
+      "Escherichia coli",
+      "Klebsiella",
+      "Proteus mirabilis"
+    ],
+    "excluye": ["Klebsiella aerogenes"],
+    "descripcion": "E. coli, Klebsiella spp (excepto K. aerogenes) y P. mirabilis"
+  },
+  {
+    "scope": "especie",
+    "incluye": [
+      "Escherichia coli",
+      "Klebsiella",
+      "Raoultella",
+      "Proteus mirabilis"
+    ],
+    "excluye": ["Klebsiella aerogenes"],
+    "descripcion": "E. coli, Klebsiella spp (excepto K. aerogenes), Raoultella spp y P. mirabilis"
+  },
+  {
+    "scope": "especie",
+    "incluye": [
+      "Escherichia coli",
+      "Klebsiella"
+    ],
+    "excluye": ["Klebsiella aerogenes"],
+    "descripcion": "E. coli y Klebsiella spp (excepto K. aerogenes)"
+  },{
+    "scope": "especie",
+    "incluye": [
+      "Escherichia coli",
+      "Citrobacter koseri"
+    ],
+    "excluye": [],
+    "descripcion": "E. coli y C. koseri"
+  },
+  {
+    "scope": "especie",
+    "incluye": [
+      "Escherichia coli",
+      "Citrobacter",
+      "Klebsiella",
+      "Raoultella",
+      "Enterobacter",
+      "Proteus mirabilis"
+    ],
+    "excluye": [],
+    "descripcion": "E. coli, Citrobacter spp, Klebsiella spp, Raoultella spp, Enterobacter spp y P. mirabilis"
+  },
+  {
+    "scope": "familia",
+    "incluye": [
+      "Morganellaceae"
+    ],
+    "excluye": [],
+    "descripcion": "Familia Morganellaceae"
+  },
+  {
+    "scope": "grupo",
+    "incluye": [
+      "Enterobacterales"
+    ],
+    "excluye": [
+      "Morganellaceae"
+    ],
+    "descripcion": "Enterobacterales excepto Morganellaceae"
+  },
+  {
+    "scope": "genero",
+    "incluye": [
+      "Salmonella"
+    ],
+    "excluye": [],
+    "descripcion": "Salmonella spp"
+  },
+  {
+    "scope": "grupo",
+    "incluye": [
+      "Enterobacterales"
+    ],
+    "excluye": [
+      "Morganella morganii",
+      "Proteus",
+      "Serratia"
+    ],
+    "descripcion": "Enterobacterales excepto M. morganii, Proteus spp y Serratia spp"
+  },
+  {
+    "scope": "especie",
+    "incluye": [
+      "Pseudomonas aeruginosa"
+    ],
+    "excluye": [],
+    "descripcion": "Sólo P. aeruginosa"
+  },{
+    "scope": "genero",
+    "incluye": [
+      "Pseudomonas"
+    ],
+    "excluye": ["Pseudomonas aeruginosa"],
+    "descripcion": "Pseudomonas spp no P. aeruginosa"
+  },{
+    "scope": "especie",
+    "incluye": [
+      "Staphylococcus aureus"
+    ],
+    "excluye": [],
+    "descripcion": "Sólo S. aureus"
+  },{
+    "scope": "especie",
+    "incluye": [
+      "Staphylococcus lugdunensis"
+    ],
+    "excluye": [],
+    "descripcion": "Sólo S. lugdunensis"
+  },{
+    "scope": "genero",
+    "incluye": [
+      "Staphylococcus"
+    ],
+    "excluye": ["Staphylococcus aureus", "Staphylococcus lugdunensis"],
+    "descripcion": "Staphylococcus spp no S. aureus ni S. lugdunensis"
+  },{
+    "scope": "especie",
+    "incluye": [
+      "Staphylococcus saprophyticus"
+    ],
+    "excluye": [],
+    "descripcion": "Sólo S. saprophyticus"
+  },{
+    "scope": "genero",
+    "incluye": [
+      "Staphylococcus"
+    ],
+    "excluye": ["Staphylococcus aureus"],
+    "descripcion": "Staphylococcus coagulasa negativos"
+  },{
+    "scope": "especie",
+    "incluye": [
+      "Staphylococcus pseudointermedius",
+      "Staphylococcus intermedius",
+      "Staphylococcus schleiferi",
+      "Staphylococcus coagulans"
+    ],
+    "excluye": [],
+    "descripcion": "S. pseudointermedius, S. intermedius, S. schleiferi, S. coagulans"
+  },{
+    "scope": "genero",
+    "incluye": [
+      "Staphylococcus"
+    ],
+    "excluye": [
+      "Staphylococcus pseudointermedius",
+      "Staphylococcus intermedius",
+      "Staphylococcus schleiferi",
+      "Staphylococcus coagulans"
+    ],
+    "descripcion": "Otros Staphylococcus spp no S. pseudointermedius, S. intermedius, S. schleiferi, S. coagulans"
+  },{
+    "scope": "genero",
+    "incluye": [
+      "Staphylococcus"
+    ],
+    "excluye": [
+      "Staphylococcus pseudointermedius",
+      "Staphylococcus intermedius",
+      "Staphylococcus schleiferi",
+      "Staphylococcus coagulans"
+    ],
+    "descripcion": "Otros Staphylococcus spp no S. pseudointermedius, S. intermedius, S. schleiferi, S. coagulans"
+  },
+  {
+    "scope": "genero",
+    "incluye": [
+      "Staphylococcus"
+    ],
+    "excluye": [
+      "Staphylococcus epidermidis",
+      "Staphylococcus lugdunensis"
+    ],
+    "descripcion": "Otros Staphylococcus spp no S. pseudointermedius, S. intermedius, S. schleiferi, S. coagulans"
+  },{
+    "scope": "especie",
+    "incluye": [
+      "Staphylococcus epidermidis",
+      "Staphylococcus lugdunensis"
+    ],
+    "excluye": [],
+    "descripcion": "S. epidermidis y S. lugdunensis"
+  },{
+    "scope": "especie",
+    "incluye": [
+      "Enterococcus faecalis"
+    ],
+    "excluye": [],
+    "descripcion": "Sólo E. faecalis"
+  },{
+    "scope": "especie",
+    "incluye": [
+      "Enterococcus faecium"
+    ],
+    "excluye": [],
+    "descripcion": "Sólo E. faecium"
+  },{
+    "scope": "especie",
+    "incluye": [
+      "Enterococcus faecalis",
+      "Enterococcus faecium"
+    ],
+    "excluye": [],
+    "descripcion": "E. faecalis y E. faecium"
+  },{
+    "scope": "especie",
+    "incluye": [
+      "Enterococcus casseliflavus",
+      "Enterococcus gallinarum"
+    ],
+    "excluye": [],
+    "descripcion": "E. casseliflavus y E. gallinarum"
+  },{
+    "scope": "especie",
+    "incluye": [],
+    "excluye": [
+      "Enterococcus casseliflavus",
+      "Enterococcus gallinarum"
+    ],
+    "descripcion": "Enterococcus spp no E. casseliflavus ni E. gallinarum"
+  },{
+    "scope": "grupo",
+    "incluye": ["Streptococcus pneumoniae"],
+    "excluye": [],
+    "descripcion": "Streptococcus pneumoniae"
+  },{
+    "scope": "grupo",
+    "incluye": ["Neisseria gonorrhoeae"],
+    "excluye": [],
+    "descripcion": "Neisseria gonorrhoeae"
+  },{
+    "scope": "grupo",
+    "incluye": ["Campylobacter jejuni and C. coli"],
+    "excluye": [],
+    "descripcion": "Campylobacter jejuni y C. coli"
+  }
+]

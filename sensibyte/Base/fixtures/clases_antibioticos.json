@@ -1,0 +1,41 @@
+[
+  {
+    "nombre": "Beta-lactámicos"
+  },
+  {
+    "nombre": "Aminoglucósidos"
+  },
+    {
+    "nombre": "Quinolonas"
+  },
+  {
+    "nombre": "Trimetoprimas"
+  },
+  {
+    "nombre": "Fosfónicos"
+  },
+  {
+    "nombre": "Polimixinas"
+  },
+  {
+    "nombre": "Macrólidos/lincosamidas"
+  },
+  {
+    "nombre": "Glucopéptidos"
+  },
+  {
+    "nombre": "Tetraciclinas"
+  },
+  {
+    "nombre": "Oxazolidinonas"
+  },
+  {
+    "nombre": "Lipopéptidos"
+  },
+  {
+    "nombre": "Antituberculosos"
+  },
+  {
+    "nombre": "Otros antibacterianos"
+  }
+]

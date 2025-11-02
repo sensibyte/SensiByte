@@ -6,20 +6,79 @@
 # https://docs.djangoproject.com/en/5.2/ref/forms/models/
 
 from django import forms
+
+from .mixins import JSONAliasMixin
 from .models import (
     AliasInterpretacionHospital, MecResValoresPositivosHospital,
     SubtipoMecanismoResistenciaHospital, MicroorganismoHospital,
     MecanismoResistenciaHospital, TipoMuestraHospital,
-    AntibioticoHospital, SexoHospital, AmbitoHospital, ServicioHospital
+    AntibioticoHospital, SexoHospital, AmbitoHospital, ServicioHospital,
+    Antibiotico, Microorganismo, TipoMuestra
 )
-from .mixins import JSONAliasMixin
+from .widgets import JSONListWidget
 
+
+class AntibioticoForm(forms.ModelForm):
+    # Para los campos JSONField utilizaremos el widget personalizado
+    # JSONListWidget, que permite visualizar de forma más limpia la lista
+    # del JSON de la base de datos y guarda de forma segura el resultado
+    # que se le pase
+    atc = forms.JSONField(
+        required=False,
+        widget=JSONListWidget(attrs={"rows": 4, "cols": 60}),
+    )
+    loinc = forms.JSONField(
+        required=False,
+        widget=JSONListWidget(attrs={"rows": 4, "cols": 60}),
+    )
+    class Meta:
+        model = Antibiotico
+        fields = "__all__" # todos los campos, de esta forma acortamos la generación de campos
+
+    def clean_loinc(self):
+        # tomamos el valor que viene del formulario
+        data = self.cleaned_data.get("loinc")
+        return data or [] # si está vacío, es None (False) -> devuelve una lista vacía para el JSONField en la BBDD
+
+    def clean_atc(self):
+        data = self.cleaned_data.get("atc")
+        return data or []
+
+# En estos modelos globales procedemos de forma análoga a AntibioticoForm
+class MicroorganismoForm(forms.ModelForm):
+    snomed = forms.JSONField(
+        required=False,
+        widget=JSONListWidget(attrs={"rows": 4, "cols": 60}),
+    )
+    class Meta:
+        model = Microorganismo
+        fields = "__all__"
+
+    def clean_snomed(self):
+        data = self.cleaned_data.get("snomed")
+        return data or []
+
+class TipoMuestraForm(forms.ModelForm):
+    codigos_loinc = forms.JSONField(
+        required=False,
+        widget=JSONListWidget(attrs={"rows": 4, "cols": 60}),
+    )
+    class Meta:
+        model = TipoMuestra
+        fields = "__all__"
+
+    def clean_codigos_loinc(self):
+        data = self.cleaned_data.get("codigos_loinc")
+        return data or []
 
 # Formulario de Antibiotico
+# A partir de esta línea tenemos los formularios asociados a los modelos hospital específicos
+# En este caso heredamos de JSONAliasMixin, asociado a modelos con Alias para permitir la
+# visualización y guardado de datos de forma análoga a JSONLstWidget
 class AntibioticoHospitalForm(JSONAliasMixin, forms.ModelForm):
     class Meta:
         model = AntibioticoHospital
-        fields = "__all__"  # todos los campos, de esta forma acortamos la generación de lista de campos
+        fields = "__all__"
 
 
 # Formulario de Microorganismo

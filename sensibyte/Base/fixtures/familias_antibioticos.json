@@ -1,0 +1,82 @@
+[
+  {
+    "nombre": "Penicilinas",
+    "clase": "Beta-lactámicos"
+  },
+  {
+    "nombre": "Cefalosporinas (1ra gen.)",
+    "clase": "Beta-lactámicos"
+  },
+  {
+    "nombre": "Cefalosporinas (2da gen.)",
+    "clase": "Beta-lactámicos"
+  },
+  {
+    "nombre": "Cefalosporinas (3ra gen.)",
+    "clase": "Beta-lactámicos"
+  },
+  {
+    "nombre": "Cefalosporinas (4a gen.)",
+    "clase": "Beta-lactámicos"
+  },
+  {
+    "nombre": "Cefalosporinas (5a gen.)",
+    "clase": "Beta-lactámicos"
+  },
+  {
+    "nombre": "Monobactámicos",
+    "clase": "Beta-lactámicos"
+  },
+  {
+    "nombre": "Carbapenemes",
+    "clase": "Beta-lactámicos"
+  },
+  {
+    "nombre": "Aminoglucósidos",
+    "clase": "Aminoglucósidos"
+  },
+  {
+    "nombre": "Fluoroquinolonas",
+    "clase": "Quinolonas"
+  },
+  {
+    "nombre": "Asociaciones con trimetoprim",
+    "clase": "Trimetoprimas"
+  },
+  {
+    "nombre": "Fosfónicos",
+    "clase": "Fosfónicos"
+  },
+  {
+    "nombre": "Polimixinas",
+    "clase": "Polimixinas"
+  },
+  {
+    "nombre": "Macrólidos/lincosamidas",
+    "clase": "Macrólidos/lincosamidas"
+  },
+  {
+    "nombre": "Glucopéptidos",
+    "clase": "Glucopéptidos"
+  },
+  {
+    "nombre": "Tetraciclinas",
+    "clase": "Tetraciclinas"
+  },
+  {
+    "nombre": "Oxazolidinonas",
+    "clase": "Oxazolidinonas"
+  },
+  {
+    "nombre": "Lipopéptidos",
+    "clase": "Lipopéptidos"
+  },
+  {
+    "nombre": "Antituberculosos",
+    "clase": "Antituberculosos"
+  },
+  {
+    "nombre": "Otros antibacterianos",
+    "clase": "Otros antibacterianos"
+  }
+]

@@ -35,8 +35,7 @@ from .models import (
     AntibioticoHospital, MicroorganismoHospital, PerfilAntibiogramaHospital,
     MecanismoResistenciaHospital, SubtipoMecanismoResistenciaHospital,
     AmbitoHospital, ServicioHospital, SexoHospital, CategoriaMuestraHospital,
-    TipoMuestraHospital, Registro, AliasInterpretacionHospital, MecResValoresPositivosHospital,
-    AntibioticoExtendido
+    TipoMuestraHospital, Registro, AliasInterpretacionHospital, MecResValoresPositivosHospital
 )
 
 
@@ -56,6 +55,19 @@ class AntibioticoHospitalAdmin(HospitalFilterAdminMixin, admin.ModelAdmin):
     search_fields = ["antibiotico__nombre"]
     list_filter = ["antibiotico__familia_antibiotico"]
 
+    def get_search_results(self, request, queryset, search_term):
+        """
+        Sobrescribe get_search_results para aplicar un filtro adicional:
+        sólo muestra los AntibioticoHospital cuyo antibiótico asociado no sea una variante.
+
+        Referencias:
+        - https://docs.djangoproject.com/en/stable/ref/contrib/admin/#django.contrib.admin.ModelAdmin.get_search_results
+        - https://stackoverflow.com/questions/64571673/how-to-override-django-get-search-results-method-in-modeladmin-while-keeping-fi
+        """
+        queryset = queryset.filter(antibiotico__es_variante=False)
+        # Llamamos al método super para que aplique la búsqueda sobre el queryset filtrado.
+        return super().get_search_results(request, queryset, search_term)
+
 
 # Admin MicroorganismoHospital
 @admin.register(MicroorganismoHospital)
@@ -67,7 +79,6 @@ class MicroorganismoHospitalAdmin(HospitalFilterAdminMixin, admin.ModelAdmin):
     autocomplete_fields = ["microorganismo"]
 
 
-# Admin PerfilAntibiogramaHospital
 @admin.register(PerfilAntibiogramaHospital)
 class PerfilAntibiogramaHospitalAdmin(HospitalFilterAdminMixin, admin.ModelAdmin):
     list_display = ["hospital", "grupo_eucast", "get_antibioticos"]
@@ -157,10 +168,3 @@ class AliasInterpretacionHospitalAdmin(HospitalFilterAdminMixin, admin.ModelAdmi
 class MecResValoresPositivosHospitalAdmin(HospitalFilterAdminMixin, admin.ModelAdmin):
     form = MecResValoresPositivosHospitalForm
     list_display = ["hospital", "get_alias"]
-
-
-# Admin AntibioticoExtendido
-@admin.register(AntibioticoExtendido)
-class AntibioticoExtendidoAdmin(HospitalFilterAdminMixin, admin.ModelAdmin):
-    list_display = ["antibiotico", "nombre_variante", "abr"]
-    search_fields = ["antibiotico"]

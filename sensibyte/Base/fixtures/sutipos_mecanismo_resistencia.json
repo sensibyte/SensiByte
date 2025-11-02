@@ -1,0 +1,42 @@
+[
+  {
+    "nombre": "CTX-M",
+    "mecanismo": "BLEE"
+  },
+  {
+    "nombre": "OXA-48",
+    "mecanismo": "Carbapenemasa"
+  },
+  {
+    "nombre": "KPC",
+    "mecanismo": "Carbapenemasa"
+  },
+  {
+    "nombre": "VIM",
+    "mecanismo": "Carbapenemasa"
+  },
+  {
+    "nombre": "IMP",
+    "mecanismo": "Carbapenemasa"
+  },
+  {
+    "nombre": "NDM",
+    "mecanismo": "Carbapenemasa"
+  },
+  {
+    "nombre": "mecA",
+    "mecanismo": "SARM"
+  },
+  {
+    "nombre": "mecC",
+    "mecanismo": "SARM"
+  },
+  {
+    "nombre": "vanA",
+    "mecanismo": "EVR"
+  },
+  {
+    "nombre": "vanB",
+    "mecanismo": "EVR"
+  }
+]

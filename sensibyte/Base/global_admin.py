@@ -9,10 +9,12 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.safestring import mark_safe
 
+from .forms import AntibioticoForm, MicroorganismoForm, TipoMuestraForm
 from .models import (
-    Hospital, Usuario, ClaseAntibiotico, FamiliaAntibiotico, Espectro, Antibiotico,
+    Hospital, Usuario, ClaseAntibiotico, FamiliaAntibiotico, Antibiotico,  # Espectro,
     GrupoEucast, Microorganismo, MecanismoResistencia, SubtipoMecanismoResistencia,
-    Ambito, Servicio, Sexo, TipoMuestra, EucastVersion, BreakpointRule
+    Ambito, Servicio, Sexo, TipoMuestra, EucastVersion, CondicionTaxonReglaInterpretacion,
+    ReglaInterpretacion
 )
 
 
@@ -64,21 +66,25 @@ class FamiliaAntibioticoAdmin(admin.ModelAdmin):
     autocomplete_fields = ["clase"]
 
 
+# Al final he decidido eliminar este modelo, ya que era difícil de manejar.
+# Además, ahora tenemos campos en Microorganismo y Antibiotico que nos orientan
+# al espectro del antibiótico o la resistencia intrínseca de cada microorganismo
 # Admin Espectro
-@admin.register(Espectro)
-class EspectroAdmin(admin.ModelAdmin):
-    list_display = ["gp", "gn", "ana", "aty"]
-    list_filter = ["gp", "gn", "ana", "aty"]
-    search_fields = ["id"]
+# @admin.register(Espectro)
+# class EspectroAdmin(admin.ModelAdmin):
+#    list_display = ["gp", "gn", "ana", "aty"]
+#    list_filter = ["gp", "gn", "ana", "aty"]
+#    search_fields = ["id"]
 
 
 # Admin Antibiotico global
 @admin.register(Antibiotico)
 class AntibioticoAdmin(admin.ModelAdmin):
+    form = AntibioticoForm
     list_display = ["nombre", "abr", "familia_antibiotico"]
     list_filter = ["familia_antibiotico"]
     search_fields = ["nombre", "abr"]
-    autocomplete_fields = ["familia_antibiotico", "espectro"]
+    autocomplete_fields = ["familia_antibiotico"]
 
 
 # Admin GrupoEucast
@@ -91,6 +97,7 @@ class GrupoEucastAdmin(admin.ModelAdmin):
 # Admin Microorganismo global
 @admin.register(Microorganismo)
 class MicroorganismoAdmin(admin.ModelAdmin):
+    form = MicroorganismoForm
     list_display = ["nombre", "grupo_eucast", "mtype"]
     list_filter = ["grupo_eucast", "mtype"]
     search_fields = ["nombre"]
@@ -138,19 +145,50 @@ class SexoAdmin(admin.ModelAdmin):
 # Admin TipoMuestra
 @admin.register(TipoMuestra)
 class TipoMuestraAdmin(admin.ModelAdmin):
-    list_display = ["clasificacion", "nombre", "codigo_loinc"]
-    search_fields = ["nombre", "clasificacion", "codigo_loinc"]
+    form = TipoMuestraForm
+    list_display = ["nombre", "snomed", "codigos_loinc"]
+    search_fields = ["nombre", "snomed"]
 
 
 # Admin EucastVersion
 @admin.register(EucastVersion)
 class EucastVersionAdmin(admin.ModelAdmin):
-    list_display = ["year", "version", "descripcion"]
-    search_fields = ["year"]
+    list_display = ["anyo", "version", "descripcion"]
+    search_fields = ["anyo"]
 
 
 # Admin BreakpointRule
-@admin.register(BreakpointRule)
+@admin.register(ReglaInterpretacion)
 class BreakpointRuleAdmin(admin.ModelAdmin):
     list_display = ["antibiotico", "version_eucast"]
     search_fields = ["antibiotico", "version_eucast"]
+
+
+@admin.register(CondicionTaxonReglaInterpretacion)
+class CondicionTaxonAdmin(admin.ModelAdmin):
+    list_display = ("condition", "scope", "get_included", "get_excluded")
+
+    def condition(self, obj):
+        """
+        Devuelve la representación como texto del objeto, que viene del
+        campo descripcion, para crear la columna Condición
+        """
+        return str(obj)
+
+    condition.short_description = "Condición"  # Nombre de la columna
+
+    def get_included(self, obj):
+        """
+        Devuelve una columna con los objetos Microorganismos incluidos en la CondicionTaxon
+        """
+        return ", ".join(obj.incluye.values_list("nombre", flat=True)) or "—"
+
+    get_included.short_description = "Incluye"
+
+    def get_excluded(self, obj):
+        """
+        Devuelve una columna con los objetos Microorganismos excluidos en la CondicionTaxon
+        """
+        return ", ".join(obj.excluye.values_list("nombre", flat=True)) or "—"
+
+    get_excluded.short_description = "Excluye"
