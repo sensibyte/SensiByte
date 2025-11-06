@@ -59,6 +59,20 @@
     </form>
 
     <p class="mt-3 text-muted">&copy; {{ now|date:"Y" }} Sensibyte</p>
+
+    {% if messages %}
+        <div class="messages-container">
+            {% for message in messages %}
+            <div class="alert
+                  {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %}
+                  alert-dismissible fade show" role="alert">
+                <i class="bi {% if message.tags == 'error' %}bi-shield-x{% elif message.tags == 'success' %}bi-check-circle{% elif message.tags == 'warning' %}bi-exclamation-triangle{% else %}bi-info-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
 </div>
 
 <!-- Bootstrap JS -->
