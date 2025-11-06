@@ -290,6 +290,9 @@ class Registro(models.Model):
     servicio = models.ForeignKey(ServicioHospital, on_delete=models.PROTECT)
     tipo_muestra = models.ForeignKey(TipoMuestraHospital, on_delete=models.PROTECT)
 
+    class Meta:
+        ordering = ["-fecha"] # Para consultas que devuelven objetos paginados
+
     def __str__(self):
         return f"{self.fecha} | {self.nh_hash}"
 
