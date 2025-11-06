@@ -3,6 +3,15 @@
 #
 # Ver models.py para más información
 
+# Para prevenir problemas de importación circular.
+# ref: https://medium.com/@k.a.fedorov/type-annotations-and-circular-imports-0a8014cd243b
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from Base.models import MicroorganismoHospital, TipoMuestraHospital
+
 from datetime import date
 
 from django.contrib.auth.models import AbstractUser
@@ -394,9 +403,11 @@ class EucastVersion(models.Model):
     @classmethod
     def get_version_from_date(cls, fecha: date) -> "EucastVersion | None":
         """Devuelve la última versión EUCAST vigente para una fecha pasada como argumento"""
+        # tan solo ejecuta la query para obtener el objeto por rango de fecha
         return (
             cls.objects
             .filter(fecha_inicio__lte=fecha)
+            # EucastVersion cuya fecha de fin de vigencia sea superior al valor 'fecha' del argumento o Nulo
             .filter(models.Q(fecha_fin__gte=fecha) | models.Q(fecha_fin__isnull=True))
             .order_by("-fecha_inicio")  # importante para obtener la última versión
             .first()
@@ -580,8 +591,14 @@ class ReglaInterpretacion(models.Model):
         verbose_name = "Regla de interpretación EUCAST"
         verbose_name_plural = "Reglas de interpretación EUCAST"
 
-    def apply_to(self, *, antibiotico, microorganismo, grupo_eucast=None,
-                 edad=None, sexo=None, categoria_muestra=None, version_eucast=None) -> bool:
+    def apply_to(self, *,
+                 antibiotico: Antibiotico,
+                 microorganismo: MicroorganismoHospital,
+                 grupo_eucast: GrupoEucast | None = None,
+                 edad: float | None = None,
+                 sexo: Sexo | None = None,
+                 categoria_muestra: TipoMuestraHospital | None = None,
+                 version_eucast: EucastVersion | None = None) -> bool:
         """
         Determina si una regla en particular aplica a los parámetros pasados.
         Imprime en consola paso a paso por qué una regla se aplica o se descarta.
@@ -718,7 +735,7 @@ class ReglaInterpretacion(models.Model):
                 return "I"
             return "ND"
 
-        return "ND" # fallback
+        return "ND"  # fallback
 
     @classmethod
     def get_applicable_rules(cls, microorganismo: Microorganismo) -> list["ReglaInterpretacion"]:
@@ -732,13 +749,13 @@ class ReglaInterpretacion(models.Model):
         reglas = cls.objects.all()
 
         # Si hay condiciones taxonómicas, las filtramos aquí:
-        aplicables = [] # inicializamos una lista
-        for regla in reglas: # iteramos por las reglas
-            condiciones = regla.condiciones_taxonomicas.all() # extraemos las condiciones taxonómicas de la regla
+        aplicables = []  # inicializamos una lista
+        for regla in reglas:  # iteramos por las reglas
+            condiciones = regla.condiciones_taxonomicas.all()  # extraemos las condiciones taxonómicas de la regla
 
             # Si no existen condiciones-> la regla aplica (no hay restricciones)
             if not condiciones.exists():
-                aplicables.append(regla) # añadimos la regla y pasamos a la siguiente
+                aplicables.append(regla)  # añadimos la regla y pasamos a la siguiente
                 continue
 
             # Si existen condiciones las verificamos. Si alguna condición aplica -> la regla aplica, la añadimos
@@ -748,7 +765,7 @@ class ReglaInterpretacion(models.Model):
                     aplicables.append(regla)
                     break
 
-        return aplicables # devolvemos la lista de ReglaInterpretacion que aplican
+        return aplicables  # devolvemos la lista de ReglaInterpretacion que aplican
 
     def __str__(self):
         return f"{self.antibiotico} — EUCAST {self.version_eucast} ({self.condiciones_taxonomicas.count()} condiciones)"

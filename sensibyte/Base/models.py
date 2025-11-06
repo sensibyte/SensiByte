@@ -35,10 +35,11 @@
 # https://docs.djangoproject.com/en/5.2/ref/models/
 
 
-from .global_models import *
-from .mixins import AliasMixin
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models import QuerySet
+
+from .global_models import *
+from .mixins import AliasMixin
 
 
 # Puesto que pueden tener distintos alias, la mayor parte
@@ -70,7 +71,7 @@ class AntibioticoHospital(AliasMixin, models.Model):
         return f"{self.antibiotico.nombre}"  # Nombre del Antibiotico
 
     @classmethod
-    def base_only(cls)->QuerySet['AntibioticoHospital']:
+    def base_only(cls) -> QuerySet['AntibioticoHospital']:
         """Devuelve los objetos AntibioticoHospital cuyo padre no es una variante"""
         return cls.objects.filter(antibiotico__es_variante=False)
 
@@ -305,8 +306,8 @@ class Aislado(models.Model):
 
     microorganismo = models.ForeignKey(MicroorganismoHospital, on_delete=models.PROTECT)
     version_eucast = models.ForeignKey(EucastVersion,
-                                       on_delete=models.SET_NULL, null=True, blank=True) # SET_NULL: pasa nulo si se
-                                                                                         # borra el FK padre asociado
+                                       on_delete=models.SET_NULL, null=True, blank=True)  # SET_NULL: pasa nulo si se
+    # borra el FK padre asociado
 
     mecanismos_resistencia = models.ManyToManyField(MecanismoResistenciaHospital, blank=True)
     subtipos_resistencia = models.ManyToManyField(SubtipoMecanismoResistenciaHospital, blank=True)
@@ -316,7 +317,7 @@ class Aislado(models.Model):
         return f"{self.microorganismo}" + (f" ({mecanismos})" if mecanismos else "")
 
     @property
-    def resultados_no_variantes(self)-> QuerySet["ResultadoAntibiotico"]:
+    def resultados_no_variantes(self) -> QuerySet["ResultadoAntibiotico"]:
         """Devuelve un queryset de ResultadoAntibioticos del Aislado
         que vienen de Antibioticos base, no variantes"""
         return self.resultados.filter(
@@ -350,20 +351,21 @@ class ResultadoAntibiotico(models.Model):
     ]
 
     interpretacion = models.CharField(max_length=2, choices=INTERPRETACION_CHOICES)
-    cmi = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True) # número decimal, anulable
+    cmi = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True)  # número decimal, anulable
     halo = models.PositiveSmallIntegerField(validators=[MinValueValidator(0),
                                                         MaxValueValidator(50)]
                                             , null=True, blank=True, verbose_name="Diámetro (mm)")
 
     class Meta:
-        unique_together = ["aislado", "antibiotico"] # combinación única por hospital
-        indexes = [ # Crea un índice en la base de datos para intentar acelerar las consultas
+        unique_together = ["aislado", "antibiotico"]  # combinación única por hospital
+        indexes = [  # Crea un índice en la base de datos para intentar acelerar las consultas
             models.Index(fields=["antibiotico"]),
             models.Index(fields=["aislado"]),
         ]
 
     def __str__(self):
         return f"{self.antibiotico} -> {self.interpretacion} ({self.cmi or self.halo or "CMI ND"})"
+
 
 # Modelo AliasInterpretacion
 class AliasInterpretacionHospital(AliasMixin, models.Model):
@@ -377,12 +379,13 @@ class AliasInterpretacionHospital(AliasMixin, models.Model):
         verbose_name = "Valor de interpretación"
         verbose_name_plural = "Valores de interpretaciones"
 
-    def get_standard_interp(self, valor):
+    def get_standard_interp(self, valor: str) -> str | None:
         """ Devuelve la interpretación estándar ("S", "I", "R", "ND") según el valor recibido."""
-        valor = valor.strip().upper() # formateamos el valor
-        if self.match_alias(valor): # buscamos si está entre los alias
-            return self.interpretacion # si está, devolvemos la interpretación asociada
+        valor = valor.strip().upper()  # formateamos el valor
+        if self.match_alias(valor):  # buscamos si está entre los alias
+            return self.interpretacion  # si está, devolvemos la interpretación asociada
         return None
+
 
 # Modelo ReinterpretacionAntibiotico
 class ReinterpretacionAntibiotico(models.Model):
@@ -395,17 +398,16 @@ class ReinterpretacionAntibiotico(models.Model):
                                            related_name="reinterpretaciones")
     version_eucast = models.ForeignKey(EucastVersion, on_delete=models.PROTECT)
     interpretacion_nueva = models.CharField(max_length=2, choices=ResultadoAntibiotico.INTERPRETACION_CHOICES)
-    fecha_reinterpretacion = models.DateTimeField(auto_now_add=True) # Timestamp automático
+    fecha_reinterpretacion = models.DateTimeField(auto_now_add=True)  # Timestamp automático
 
     class Meta:
         unique_together = ["resultado_original",
-                           "version_eucast"] # Se obliga a eliminar una reinterpretación antes de generar una
-                                             # nueva, ya que no puede haber 2 reinterpretaciones para una
-                                             # misma versión EUCAST
+                           "version_eucast"]  # Se obliga a eliminar una reinterpretación antes de generar una
+        # nueva, ya que no puede haber 2 reinterpretaciones para una
+        # misma versión EUCAST
 
         verbose_name = "Reinterpretación EUCAST"
         verbose_name_plural = "Reinterpretaciones EUCAST"
 
-    def __str__(self): # Así queda resuelto a primera vista si hubo cambio con la nueva interpretación
+    def __str__(self):  # Así queda resuelto a primera vista si hubo cambio con la nueva interpretación
         return f"{self.resultado_original} -> {self.interpretacion_nueva} ({self.version_eucast})"
-
