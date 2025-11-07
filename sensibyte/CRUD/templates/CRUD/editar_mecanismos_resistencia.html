@@ -1,0 +1,103 @@
+{% extends "Base/base.html" %}
+{% block title %}Editar mecanismos de resistencia{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <h2 class="mb-4">Mecanismos de resistencia para {{ aislado.microorganismo }}</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <div class="mb-3">
+      <label class="form-label fs-5">Mecanismos:</label>
+      <div class="d-flex flex-wrap gap-2">
+        {% for checkbox in form.mecanismos_resistencia %}
+          <label class="form-check-label badge-mecanismo bg-info text-dark">
+            {{ checkbox.tag }}
+            {{ checkbox.choice_label }}
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fs-5">Subtipos:</label>
+      <div class="d-flex flex-wrap gap-2">
+        {% for checkbox in form.subtipos_resistencia %}
+          <label class="form-check-label badge-mecanismo bg-secondary text-light">
+            {{ checkbox.tag }}
+            {{ checkbox.choice_label }}
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-between mt-4">
+      <a href="{% url 'CRUD:registro_editar' aislado.registro_id %}" class="btn btn-outline-secondary">
+        Cancelar
+      </a>
+      <button type="submit" class="btn btn-primary px-4">Guardar</button>
+    </div>
+  </form>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(function(){
+  $('.badge-mecanismo input[type="checkbox"]').each(function(){
+    var $input = $(this);
+    var $label = $input.parent();
+
+    function actualizarEstilo(){
+      if($input.is(':checked')){
+        $label.addClass('activo');
+      } else {
+        $label.removeClass('activo');
+      }
+    }
+
+    actualizarEstilo();
+    $input.on('change', actualizarEstilo);
+  });
+});
+</script>
+
+<style>
+  .badge-mecanismo {
+    cursor: pointer;
+    padding: 0.5em 0.9em;
+    border-radius: 0.6rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    user-select: none;
+  }
+
+  .badge-mecanismo input[type="checkbox"] {
+    display: none;
+  }
+
+  /* Estado normal */
+  .badge-mecanismo {
+    opacity: 0.75;
+  }
+
+  /* Estado seleccionado */
+  .badge-mecanismo.activo {
+    opacity: 1;
+    border-color: #0d6efd;
+    box-shadow: 0 0 10px rgba(13,110,253,0.5);
+    transform: scale(1.05);
+  }
+
+  /* Hover */
+  .badge-mecanismo:hover {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+</style>
+{% endblock %}

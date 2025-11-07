@@ -1,0 +1,105 @@
+{% extends "Base/base.html" %}
+
+{% block extra_head %}
+
+<style>
+
+/* Badges */
+.badge-antibiotico {
+  min-width: 120px;
+  text-align: center;
+  padding: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.interpretacion-select {
+  width: 100%;
+}
+
+/* Colores por interpretación para la inicialización de los select */
+.interpretacion-select option[value="S"] { background-color: #198754; color: white; }
+.interpretacion-select option[value="I"] { background-color: #ffc107; color: black; }
+.interpretacion-select option[value="R"] { background-color: #dc3545; color: white; }
+.interpretacion-select option[value="ND"] { background-color: #6c757d; color: white; }
+.interpretacion-select option[value="NA"] { background-color: #adb5bd; color: white; }
+
+/* Resaltar campo CMI con error */
+.is-invalid {
+  border-color: #dc3545;
+}
+
+</style>
+
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <h2 class="mb-4">Editar antibiograma para {{ aislado.microorganismo }} (ID {{ aislado.id }})</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ formset.management_form }}
+
+    <div class="d-flex flex-wrap gap-2">
+        {# Iteramos por cada uno de los antibíóticos #}
+        {% for form in formset.forms %}
+        {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+
+        {# Comprobamos si hay errores en el form para resaltar el badge #}
+        <div class="badge-antibiotico p-2 border rounded text-white d-flex flex-column align-items-center {% if form.non_field_errors or form.cmi.errors %}border-danger{% endif %}"
+             title="{% for e in form.non_field_errors %}{{ e }} {% endfor %}{% for e in form.cmi.errors %}CMI: {{ e }} {% endfor %}">
+          <strong>{{ form.instance.antibiotico }}</strong>
+
+
+          <select name="{{ form.interpretacion.html_name }}" class="form-select mt-1 form-select-sm interpretacion-select">
+            <option value="S" {% if form.instance.interpretacion == "S" %}selected{% endif %}>S</option>
+            <option value="I" {% if form.instance.interpretacion == "I" %}selected{% endif %}>I</option>
+            <option value="R" {% if form.instance.interpretacion == "R" %}selected{% endif %}>R</option>
+            <option value="ND" {% if form.instance.interpretacion == "ND" %}selected{% endif %}>ND</option>
+            <option value="NA" {% if form.instance.interpretacion == "NA" %}selected{% endif %}>NA</option>
+          </select>
+
+          <input type="number" step="any" name="{{ form.cmi.html_name }}" value="{{ form.instance.cmi|default:'' }}"
+                 class="form-control form-control-sm mt-1 {% if form.cmi.errors %}is-invalid{% endif %}" placeholder="CMI">
+
+          <div class="form-check mt-1">
+            {{ form.DELETE }} <label class="form-check-label">Eliminar</label>
+          </div>
+        </div>
+
+      {% endfor %}
+    </div>
+
+    <div class="d-flex justify-content-between mt-4">
+      <a href="{% url 'CRUD:registro_editar' aislado.registro.id %}" class="btn btn-secondary">Volver al registro</a>
+      <button type="submit" class="btn btn-primary">Guardar cambios</button>
+    </div>
+  </form>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+
+    // Función para pintar cada uno de los select, según el valor que se escoja
+$(function(){
+    $('.interpretacion-select').each(function(){
+        var $select = $(this);
+        function actualizarColor(){
+            var valor = $select.val();
+            var $badge = $select.closest('.badge-antibiotico');
+
+            // switch/case por valor
+            switch(valor){
+                case 'S': $badge.css({'background-color':'#198754','color':'white'}); break;
+                case 'I': $badge.css({'background-color':'#ffc107','color':'black'}); break;
+                case 'R': $badge.css({'background-color':'#dc3545','color':'white'}); break;
+                case 'ND': $badge.css({'background-color':'#6c757d','color':'white'}); break;
+                case 'NA': $badge.css({'background-color':'#adb5bd','color':'white'}); break;
+            }
+        }
+        actualizarColor();
+        $select.on('change', actualizarColor);
+    });
+});
+</script>
+{% endblock %}

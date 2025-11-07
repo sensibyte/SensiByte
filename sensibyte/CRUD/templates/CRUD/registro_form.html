@@ -1,0 +1,139 @@
+{% extends "Base/base.html" %}
+{% block title %}Editar Registro y Aislados{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<style>
+  .badge-S { background-color: #198754; } /* verde */
+  .badge-I { background-color: #ffc107; color: #000; } /* amarillo */
+  .badge-R { background-color: #dc3545; } /* rojo */
+  .badge-otro { background-color: #6c757d; } /* gris */
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Editar Registro y Aislados</h5>
+    </div>
+    <div class="card-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <!-- Datos del Registro -->
+          {# form de Registro de la vista #}
+        <fieldset class="mb-4 border p-3 rounded shadow-sm">
+          <legend class="fw-bold">Datos del Registro</legend>
+          {{ form.non_field_errors }}
+          {% for field in form %}
+            <div class="mb-3">
+              {{ field.label_tag }} {{ field }}
+              {% if field.errors %}
+                <div class="text-danger small">{{ field.errors }}</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </fieldset>
+
+        <!-- Aislados -->
+          {# formset de Aislados de la vista #}
+        <fieldset class="mb-4 border p-3 rounded shadow-sm">
+          <legend class="fw-bold">Aislados</legend>
+          {{ formset.management_form }}
+
+          {% if formset.non_form_errors %}
+            <div class="alert alert-danger">
+              <ul>{% for error in formset.non_form_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+            </div>
+          {% endif %}
+
+            {# iteramos por los formularios de aislado del formset #}
+          {% for aislado_form in formset %}
+            <div class="border p-3 mb-3 rounded bg-light">
+              {{ aislado_form.id }}
+
+              {% if aislado_form.instance.pk %}
+                <h5 class="mb-2">
+                  🦠 Aislado #{{ forloop.counter }}:
+                  <span class="badge bg-primary">{{ aislado_form.instance.microorganismo }}</span>
+                </h5>
+
+                {% with mecanismos=aislado_form.instance.mecanismos_resistencia.all subtipos=aislado_form.instance.subtipos_resistencia.all %}
+                  {% if mecanismos or subtipos %}
+                    <div class="mb-2">
+                      {% for m in mecanismos %}
+                        <span class="badge bg-danger">{{ m.mecanismo.nombre }}</span>
+                      {% endfor %}
+                      {% for s in subtipos %}
+                        <span class="badge bg-warning text-dark">{{ s.subtipo_mecanismo.nombre }}</span>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endwith %}
+
+
+                <!-- Resultados antibióticos -->
+                {% if aislado_form.instance.resultados.all %}
+                  <div class="mb-2 p-2 border rounded" style="background:#f8f9fa;">
+                    {% for r in aislado_form.instance.resultados.all %}
+                      <small>{{ r.antibiotico }}</small>:
+                      {% if r.interpretacion == 'S' %}
+                        <span class="badge badge-S">S</span>
+                      {% elif r.interpretacion == 'I' %}
+                        <span class="badge badge-I">I</span>
+                      {% elif r.interpretacion == 'R' %}
+                        <span class="badge badge-R">R</span>
+                      {% else %}
+                        <span class="badge badge-otro">{{ r.interpretacion }}</span>
+                      {% endif %}
+                      {% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              {% else %}
+                <h5 class="text-secondary">➕ Nuevo aislado</h5> {# No implemento de momento una carga individual #}
+              {% endif %}
+
+              <!-- Campos editables -->
+              {% for field in aislado_form.visible_fields %}
+                {% if field.name != 'DELETE' %}
+                  <div class="mb-2">{{ field.label_tag }} {{ field }}</div>
+                {% endif %}
+              {% endfor %}
+
+              <!-- Acciones -->
+              {% if aislado_form.instance.pk %}
+                <div class="d-flex justify-content-end gap-2 mt-2">
+                  <a href="{% url 'CRUD:editar_resultados_antibiotico' aislado_form.instance.pk %}" class="btn btn-outline-info btn-sm">
+                    <i class="bi bi-clipboard-data"></i> Editar antibiograma
+                  </a>
+                  <a href="{% url 'CRUD:editar_mecanismos_resistencia' aislado_form.instance.pk %}" class="btn btn-outline-warning btn-sm">
+                    <i class="bi bi-gear"></i> Editar mecanismos
+                  </a>
+                </div>
+                <div class="form-check mt-2">
+                  <label class="form-check-label">
+                    {{ aislado_form.DELETE }} Eliminar este aislado
+                  </label>
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </fieldset>
+
+        <!-- Botones inferiores -->
+        <div class="d-flex justify-content-between mt-4">
+          <a href="{% url 'CRUD:listar_registros' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al listado
+          </a>
+          <button type="submit" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-floppy"></i> Guardar cambios
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

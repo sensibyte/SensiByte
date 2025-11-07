@@ -1,0 +1,336 @@
+{% extends "Base/base.html" %}
+
+{% block extra_head %}
+<style>
+  .badge-S { background-color: #198754; } /* verde */
+  .badge-I { background-color: #ffc107; color: #000; } /* amarillo */
+  .badge-R { background-color: #dc3545; } /* rojo */
+  .antibiograma-cell {
+    max-width: 600px;
+    white-space: normal;
+  }
+
+  /* El prepend no se alinea bien con el selec2 sino es con estos estilos, la idea en stackoverflow */
+  /* https://stackoverflow.com/questions/56707134/select2-with-bootstrap-theme-not-honoring-input-group-class */
+  .input-group > .select2-container--bootstrap-5 {
+    width: auto !important;
+    flex: 1 1 auto;
+  }
+
+  .input-group > .select2-container--bootstrap-5 .select2-selection--single {
+    height: 100%;
+    line-height: inherit;
+    padding: 0.5rem 1rem;
+  }
+
+</style>
+{% endblock %}
+
+{% block title %}Registros y antibiogramas{% endblock %}
+
+{% block content %}
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-light d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Filtrar registros</h5>
+    <a href="{% url 'CRUD:listar_registros' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-clockwise"></i> Resetear
+    </a>
+  </div>
+
+  <div class="card-body">
+    <form method="get" name="filtros_activos" class="row g-3">
+
+     {# Campos del formulario de la vista #}
+      <!-- FECHA INICIO -->
+      <div class="col-md-6">
+        <label for="{{ form.fecha_inicio.id_for_label }}" class="form-label">
+          {{ form.fecha_inicio.label }}
+        </label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+          {{ form.fecha_inicio }}
+        </div>
+      </div>
+
+      <!-- FECHA FIN -->
+      <div class="col-md-6">
+        <label for="{{ form.fecha_fin.id_for_label }}" class="form-label">
+          {{ form.fecha_fin.label }}
+        </label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-calendar-check"></i></span>
+          {{ form.fecha_fin }}
+        </div>
+      </div>
+
+      <!-- MICROORGANISMO -->
+      <div class="col-md-6">
+        <label for="{{ form.microorganismo.id_for_label }}" class="form-label">
+          {{ form.microorganismo.label }}
+        </label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-bug"></i></span>
+          {{ form.microorganismo }}
+        </div>
+      </div>
+
+      <!-- MECANISMO -->
+      <div class="col-md-6">
+        <label for="{{ form.mecanismo.id_for_label }}" class="form-label">
+          {{ form.mecanismo.label }}
+        </label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-diagram-3"></i></span>
+          {{ form.mecanismo }}
+        </div>
+      </div>
+
+      <!-- ANTIBIÓTICO -->
+      <div class="col-md-6">
+        <label for="{{ form.antibiotico.id_for_label }}" class="form-label">
+          {{ form.antibiotico.label }}
+        </label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-capsule"></i></span>
+          {{ form.antibiotico }}
+        </div>
+      </div>
+
+      <div class="col-12 text-end mt-3">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-funnel"></i> Filtrar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{# Tabla de objetos Registro #}
+<div class="card shadow-sm">
+  <div class="card-header bg-light d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Listado de registros</h5>
+  </div>
+  <div class="card-body">
+    <table class="table table-hover align-middle table-sm">
+      <thead class="table-light">
+        <tr>
+          <th><input type="checkbox" id="select-all"></th>
+          <th>Fecha</th>
+          <th>Microorganismo(s)</th>
+          <th>Antibiograma</th>
+          <th>Mecanismos</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for registro in registros %}
+          <tr>
+            <td><input type="checkbox" name="registro_ids" value="{{ registro.id }}"></td>
+            <td>{{ registro.fecha|date:"d/m/Y" }}</td> {# filtro de fecha al formato dia/mes/año #}
+            <td>
+              {% for aislado in registro.aislados.all %}
+                <div>{{ aislado.microorganismo }}</div>
+              {% empty %}
+                <em>Sin aislamientos</em>
+              {% endfor %}
+            </td>
+            <td class="antibiograma-cell">
+              {% for aislado in registro.aislados.all %}
+                <div
+                  class="mb-2"
+                  data-bs-toggle="tooltip" {# tooltip para los resultados del antibiograma #}
+                  data-bs-html="true"
+                  title="{% for resultado in aislado.resultados_no_variantes %}
+                           {{ resultado.antibiotico }}: {{ resultado.interpretacion }}
+                           {% if not forloop.last %}<br>{% endif %}
+                         {% endfor %}">
+                  {% for resultado in aislado.resultados_no_variantes %}
+                  <small>{{ resultado.antibiotico }}:</small>
+                  {% if resultado.interpretacion == 'S' %}
+                    <span class="badge badge-S">Sensible</span>
+                  {% elif resultado.interpretacion == 'I' %}
+                    <span class="badge badge-I">Intermedio</span>
+                  {% elif resultado.interpretacion == 'R' %}
+                    <span class="badge badge-R">Resistente</span>
+                  {% else %}
+                    <span class="badge bg-secondary">{{ resultado.interpretacion }}</span>
+                  {% endif %}
+                  {% if not forloop.last %}, {% endif %}
+                {% endfor %}
+                </div>
+              {% endfor %}
+            </td>
+            <td>
+              {% for aislado in registro.aislados.all %} {# mecanismos de resistencia #}
+                <div>
+                  <strong>{{ aislado.microorganismo }}:</strong>
+                  {% with mecanismos=aislado.mecanismos_resistencia.all subtipos=aislado.subtipos_resistencia.all %}
+                    {% if mecanismos or subtipos %}
+                      {% for m in mecanismos %}
+                        <span class="badge bg-info text-dark">{{ m.mecanismo.nombre }}</span>
+                      {% endfor %}
+                      {% for s in subtipos %}
+                        <span class="badge bg-light text-dark border">{{ s.subtipo_mecanismo.nombre }}</span>
+                      {% endfor %}
+                    {% else %}
+                      <em>—</em>
+                    {% endif %}
+                  {% endwith %}
+                </div>
+              {% empty %}
+                <em>Sin mecanismos</em>
+              {% endfor %}
+            </td>
+              {# panel de opciones CRUD #}
+            <td>
+              <a href="{% url 'CRUD:registro_ver' registro.pk %}" class="btn btn-sm btn-outline-info" title="Ver">
+                <i class="bi bi-eye"></i>
+              </a>
+              <a href="{% url 'CRUD:registro_editar' registro.pk %}" class="btn btn-sm btn-outline-warning" title="Editar">
+                <i class="bi bi-pencil-square"></i>
+              </a>
+              <a href="{% url 'CRUD:registro_eliminar' registro.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                <i class="bi bi-trash"></i>
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div>
+      <button type="button" class="btn btn-danger mt-2" data-bs-toggle="modal" data-bs-target="#confirmarEliminacion">
+        <i class="bi bi-trash3"></i> Eliminar registros
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de confirmación de eliminación de registros: pueden ser los seleccionados o TODOS los registros -->
+<div class="modal fade" id="confirmarEliminacion" tabindex="-1" aria-labelledby="confirmarEliminacionLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="form-eliminacion" action="{% url 'CRUD:registro_batch_delete' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmarEliminacionLabel">¿Deseas eliminar registros?</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          Elige qué registros deseas eliminar:
+        </div>
+        <div class="modal-footer">
+          <button type="submit" name="modo" value="pagina" class="btn btn-warning">
+            <i class="bi bi-check-circle"></i> Eliminar seleccionados
+          </button>
+          <button type="submit" name="modo" value="todos" class="btn btn-danger">
+            <i class="bi bi-exclamation-triangle"></i> Eliminar todos los filtrados
+          </button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# Para el paginador #}
+{% if is_paginated %}
+  <nav aria-label="Paginación" class="mt-3">
+    <ul class="pagination justify-content-center">
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">Anterior</a>
+        </li>
+      {% endif %}
+      {% for num in paginator.page_range %}
+        {% if num == page_obj.number %}
+          <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+          <li class="page-item"><a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a></li>
+        {% endif %}
+      {% endfor %}
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">Siguiente</a>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_footer %}
+<!--  jQuery y Select2 -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  $(function () {
+    $('[data-bs-toggle="tooltip"]').tooltip({ html: true }); // activa los tooltips
+
+    // si se marca el checkbox #select-all se marcan todos los checkbox individuales
+    $('#select-all').on('change', function () {
+      $('input[name="registro_ids"]').prop('checked', this.checked);
+    });
+
+    // Prepara los datos del formulario de eliminación de registros para añadirlos al formulario
+    $('#form-eliminacion').on('submit', function () {
+      const seleccionados = $('input[name="registro_ids"]:checked'); // busca los registros marcados
+      $(this).find('input[name="registro_ids"][type="hidden"]').remove(); //elimina inputs ocultos
+
+      // por cada checkbox marcado crea un input oculto, ponle el mismo 'name' y valor y añádelo al formulario
+      // De este modo se consigue que al hacer submit se reciba la lista de IDs para inyectar en el POST
+      seleccionados.each(function () {
+        $('<input>', {
+          type: 'hidden',
+          name: 'registro_ids',
+          value: $(this).val()
+        }).appendTo('#form-eliminacion');
+      });
+    });
+  });
+</script>
+<script>
+    {# Selector de antibióticos del hospital del usuario con Select2 #}
+$(function() {
+    $('.select2-antibioticos').select2({
+        theme: 'bootstrap-5',
+        // AJAX
+        ajax: {
+            url: '{% url "CRUD:buscar_antibioticos" %}',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return { q: params.term };
+            },
+            processResults: function (data) {
+                return { results: data.results };
+            },
+            cache: true
+        },
+        minimumInputLength: 1,
+        placeholder: 'Buscar antibióticos...',
+        allowClear: true,
+        width: '100%',
+        language: {
+            inputTooShort: function (args) {
+                const remaining = args.minimum - args.input.length;
+                return `🔍 Escribe al menos ${remaining} carácter${remaining !== 1 ? 'es' : ''}...`;
+            },
+            searching: function () {
+                return '🔍 Buscando...';
+            },
+            noResults: function () {
+                return '❌ No se encontraron resultados';
+            }
+        }
+    });
+});
+</script>
+
+{% endblock %}

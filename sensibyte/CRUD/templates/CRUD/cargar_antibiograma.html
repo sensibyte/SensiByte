@@ -1,0 +1,207 @@
+{% extends "Base/base.html" %} {# Extiende la plantilla Base #}
+{% load static %}
+{% load form_extras %}
+
+{# Sobreescritura del título #}
+{% block title %}Cargar antibiogramas{% endblock %}
+
+{# Sobreescritura del bloque extra_head #}
+{% block extra_head %}
+
+
+<!-- estilos personalizados -->
+<style>
+    .card {
+      border-radius: 1rem; /* borde redondeado */
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05); /* sombra */
+      border: 1px solid #dee2e6;
+    }
+    .section-title {
+      font-weight: 600;
+      color: #0d6efd; /* fuente de color azul */
+    }
+
+    /* Para la pantalla de espera de carga */
+    #loading-overlay {
+      position: fixed; /* no permite scroll */
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%; /* ocupa toda la pantalla */
+      background: rgba(255,255,255,0.95); /* fondo prácticamente opaco */
+      z-index: 9999; /* por encima de cualquier elemento */
+      display: flex;
+      justify-content: center;
+      align-items: center; /* centrado */
+    }
+</style>
+{% endblock %}
+
+<!-- contenido -->
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-upload"></i> Cargar archivo de antibiogramas</h2>
+
+    <form id="upload-form" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+        {% csrf_token %}
+
+        <div class="card p-4 mb-4">
+            <h5 class="section-title mb-3"><i class="bi bi-filetype-csv"></i> Seleccionar archivo</h5>
+            <div class="mb-3">
+                <label for="id_file" class="form-label fw-semibold">Archivo(s) CSV o Excel</label>
+                {# hacemos el input de archivo multiple y requerido #}
+                <input type="file" name="file" class="form-control" multiple required id="id_file">
+            </div>
+        </div>
+
+        <div class="card p-4 mb-4">
+            <h5 class="section-title mb-3"><i class="bi bi-bug"></i> Microorganismo</h5>
+            <div class="mb-3">
+                {{ form.microorganismo.label_tag }} {# etiqueta del label #}
+
+                {# añadimos la clase form-select que reconoce Bootstrap #}
+                {{ form.microorganismo|add_class:"form-select" }}
+
+                {% if not form.microorganismo.field.queryset.exists %} {# en el caso de que no hubiera aún
+                microorganismos #}
+                <small class="text-muted">No hay microorganismos registrados para tu hospital.</small>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Este bloque está oculto por su clase d-none. Cambia a visible por JavaScript cuando se carguen archivos en el formulario #}
+        <div id="column-mapping" class="card p-4 mb-4 d-none">
+            <h5 class="section-title mb-3"><i class="bi bi-diagram-3"></i> Asignar columnas del archivo</h5>
+
+            <h6 class="text-primary mb-2">Campos obligatorios</h6>
+            <div class="row">
+                {% for campo in campos_demograficos %} {# recorremos los campos que inicializamos en el contexto de la vista y los formamos a mano #}
+
+                {# llevan una etiqueta span con el asterisco en rojo para saber que son obligatorios #}
+                <div class="col-md-4 mb-3">
+                    <label for="{{ campo }}_col" class="form-label">{{ campo|capfirst }} <span
+                            class="text-danger">*</span></label>
+                    <select class="form-select" name="{{ campo }}_col" id="{{ campo }}_col" required></select>
+                </div>
+                {% endfor %}
+            </div>
+
+            {# Para campos opcionales, también inicializados como lista en el contexto de la vista #}
+            <h6 class="text-secondary mt-4 mb-2">Campos opcionales</h6>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="nh_col" class="form-label">NH <small class="text-muted">(opcional - se generará si no se
+                        mapea)</small></label>
+                    <select class="form-select" name="nh_col" id="nh_col">
+                        <option value="">(No mapear - generar automáticamente)</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="observaciones_col" class="form-label">Observaciones <small class="text-muted">(para
+                        detectar mecanismos)</small></label>
+                    <select class="form-select" name="observaciones_col" id="observaciones_col">
+                        <option value="">(No mapear)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            {# botón submit del formulario #}
+            <button type="submit" class="btn btn-outline-success" id="submit-btn">
+                <i class="bi bi-cloud-upload"></i>
+                <span id="submit-text">Cargar datos</span>
+                <span id="submit-spinner" class="d-none">
+                    {# spinner de carga #}
+          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          Procesando...
+        </span>
+            </button>
+            <a href="{% url 'CRUD:listar_registros' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </form>
+
+    <!-- Pantalla de carga (overlay) -->
+    <div id="loading-overlay" class="d-none">
+        <div class="text-center">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+            <h5>Cargando archivo...</h5>
+            <p class="text-muted">Por favor, no cierres esta ventana.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_footer %}
+<!-- JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+{# SheetJS nos permitirá extraer los nombres de las columnas desde el cliente, sin tener que #}
+{# ver demos aquí: https://sheetjs.com/ #}
+{# guía práctica: https://medium.com/@me.mohamed.elnagar/working-with-xlsx-files-in-javascript-a-beginners-guide-b649a06de8fc #}
+{# https://forums.meteor.com/t/sheet-js-xlsx-to-be-used-in-client-side-in-meteor/45992 #}
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+      $('input[type="file"][name="file"]').on('change', function () { // se activa cuando se selecciona un archivo
+        let file = this.files[0]; // todos los archivos tienen las mismas columnas, nos quedamos con el primero
+        if (!file) return;
+
+        let reader = new FileReader(); // API para leer archivos del navegador
+        reader.onload = function (e) { // se ejecuta cuando termine de leer el archivo
+
+          // parsea el archivo Excel/CSV
+          let data = new Uint8Array(e.target.result); // convierte datos a un array de bytes
+          let workbook = XLSX.read(data, { type: 'array' }); // lee el libro Excel desde bytes
+          let sheet = workbook.Sheets[workbook.SheetNames[0]]; // con la primer hoja es suficiente, serían todas igual
+          let json = XLSX.utils.sheet_to_json(sheet, { header: 1 }); // cada fila se convierte en un array
+          if (json.length === 0) return;
+
+          let headers = json[0]; // extraemos los nombres de columnas (headers)
+          $('#column-mapping').removeClass('d-none'); // mostramos la sección oculta #column-mapping
+
+           // Para cada <select> dentro del bloque:
+           // - Si no es requerido, mantiene la primera opción (vacía)
+           // - Limpia el contenido actual
+           // - Añade los nombres de los encabezados como opciones
+          $('#column-mapping select').each(function () {
+            let select = $(this);
+            let keepFirst = !select.is('[required]');
+            let options = keepFirst ? select.find('option:first').clone() : null;
+            select.empty();
+            if (keepFirst) select.append(options);
+            headers.forEach(h => select.append(`<option value="${h}">${h}</option>`)); // pasamos las opciones a cada select
+          });
+        };
+        reader.readAsArrayBuffer(file); // lee el archivo como datos binarios para que XLSX pueda procesarlo
+      });
+
+      // Cuando se pulsa el botón submit del formulario
+      $('#upload-form').on('submit', function (e) {
+
+        if ($('#submit-btn').prop('disabled')) {
+          e.preventDefault(); // si el botón está ya deshabilitado, impide el envío del formulario
+          return false;
+        }
+
+        // mostramos el spinner y pantalla de carga
+        $('#submit-text').addClass('d-none');
+        $('#submit-spinner').removeClass('d-none');
+        $('#submit-btn').prop('disabled', true);
+        $('#loading-overlay').removeClass('d-none');
+
+        // se establece un temporizador de 1h para dar tiempo al servidor a cargar los datos
+        setTimeout(() => {
+          $('#submit-text').removeClass('d-none');
+          $('#submit-spinner').addClass('d-none');
+          $('#submit-btn').prop('disabled', false);
+          $('#loading-overlay').addClass('d-none');
+        }, 3600000);
+      });
+    });
+</script>
+{% endblock %}
+

@@ -1,0 +1,32 @@
+{% extends "Base/base.html" %}
+{% block title %}Eliminar registro{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="card shadow-sm border-danger">
+    <div class="card-body text-center py-4">
+      <h3 class="text-danger mb-3">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        Confirmar eliminación
+      </h3>
+
+      <p class="fs-5">
+        ¿Seguro que deseas eliminar el registro del <strong>{{ object.fecha|date:"d/m/Y" }}</strong>?
+      </p>
+      <p class="text-muted">Esta acción no se puede deshacer.</p>
+
+      <form method="post" class="mt-4">
+        {% csrf_token %}
+        <div class="d-flex justify-content-center gap-3">
+          <button type="submit" class="btn btn-outline-danger btn-sm px-3">
+            <i class="bi bi-trash"></i> Sí, eliminar
+          </button>
+          <a href="{% url 'CRUD:listar_registros' %}" class="btn btn-outline-secondary btn-sm px-3">
+            <i class="bi bi-arrow-left"></i> Cancelar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

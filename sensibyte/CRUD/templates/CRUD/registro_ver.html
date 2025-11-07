@@ -1,0 +1,122 @@
+{% extends "Base/base.html" %}
+
+{% block extra_head %}
+<style>
+    .section-title {
+    font-weight: 600;
+    color: #0d6efd;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Detalle del registro</h2>
+    <div>
+      <a href="{% url 'CRUD:listar_registros' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Volver al listado
+      </a>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">Datos del registro</h5>
+    </div>
+
+      {# datos del registro #}
+    <div class="card-body">
+      <dl class="row">
+        <dt class="col-sm-3">Hospital</dt>
+        <dd class="col-sm-9">{{ registro.hospital.nombre }}</dd>
+
+        <dt class="col-sm-3">Fecha</dt>
+        <dd class="col-sm-9">{{ registro.fecha|date:"d/m/Y" }}</dd>
+
+        <dt class="col-sm-3">Edad</dt>
+        <dd class="col-sm-9">{{ registro.edad }}</dd>
+
+        <dt class="col-sm-3">Sexo</dt>
+        <dd class="col-sm-9">{{ registro.sexo }}</dd>
+
+        <dt class="col-sm-3">Ámbito</dt>
+        <dd class="col-sm-9">{{ registro.ambito }}</dd>
+
+        <dt class="col-sm-3">Servicio</dt>
+        <dd class="col-sm-9">{{ registro.servicio }}</dd>
+
+        <dt class="col-sm-3">Tipo de muestra</dt>
+        <dd class="col-sm-9">{{ registro.tipo_muestra }}</dd>
+      </dl>
+    </div>
+  </div>
+
+    {# datos de los aislados asociados al registro #}
+  {% for aislado in aislados %}
+  <div class="card mb-4 border-secondary shadow-sm">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+      <h5 class="mb-0 section-title">
+        <i class="bi bi-bug"></i> {{ aislado.microorganismo }}
+      </h5>
+      <span class="badge bg-secondary">Aislado #{{ forloop.counter }}</span>
+    </div>
+
+    <div class="card-body">
+      <h6 class="text-muted">Resultados de antibióticos</h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Antibiótico</th>
+              <th>CMI</th>
+              <th>Interpretación</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in aislado.resultados_no_variantes %}
+            <tr>
+              <td>{{ r.antibiotico }}</td>
+              <td>{{ r.cmi|default:"—" }}</td> {# si no hay CMI se registra "—" #}
+              <td>
+                  {# colocamos badges de color dependiendo de la interpretación #}
+                {% if r.interpretacion == "S" %}
+                  <span class="badge bg-success">Sensible</span>
+                {% elif r.interpretacion == "I" %}
+                  <span class="badge bg-warning text-dark">Intermedio</span>
+                {% elif r.interpretacion == "R" %}
+                  <span class="badge bg-danger">Resistente</span>
+                {% else %}
+                  {# interpretación "ND" si no se encuentra #}
+                  <span class="badge bg-secondary">{{ r.interpretacion|default:"ND" }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+        {# mecanismos de resistencia para los aislados #}
+      {% if aislado.mecanismos_resistencia.exists or aislado.subtipos_resistencia.exists %}
+      <h6 class="text-muted mt-3">Mecanismos de resistencia</h6>
+      <ul>
+        {% for m in aislado.mecanismos_resistencia.all %}
+          <li>{{ m.mecanismo }}</li>
+        {% endfor %}
+        {% for sm in aislado.subtipos_resistencia.all %}
+          <li>{{ sm.subtipo_mecanismo }} ({{ sm.subtipo_mecanismo.mecanismo.nombre }})</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-muted mt-3"><em>Sin mecanismos detectados</em></p>
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <div class="alert alert-info">No hay aislados registrados en este caso.</div>
+  {% endfor %}
+
+</div>
+{% endblock %}
