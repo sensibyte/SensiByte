@@ -569,7 +569,7 @@ def detect_arm(row: pandas.Series, mapping: dict, mecanismos: list[MecanismoResi
         # separamos las frases por nuestra constante lista de separadores
         frases = SEPARADORES.split(texto)
         for frase in frases:  # buscamos entre las frases
-            frase_norm = frase.lower().split()  # normalizamos la frase
+            frase_norm = normalize_text(frase)  # normalizamos la frase
 
             # realizamos la búsqueda de mecanismos
             for m in mecanismos:
