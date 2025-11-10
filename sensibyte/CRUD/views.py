@@ -35,7 +35,7 @@ class CargarAntibiogramaView(FormView):
     """Vista de carga de archivos con antibiogramas para el formulario CargarAntibiogramaForm"""
     template_name = "CRUD/cargar_antibiograma.html"  # plantilla
     form_class = CargarAntibiogramaForm  # formulario
-    success_url = reverse_lazy("Base:cargar_antibiograma")  # redirección de éxito
+    success_url = reverse_lazy("CRUD:cargar_antibiograma")  # redirección de éxito
 
     # Sobreescribimos el método get_form_kwargs, el método que inyecta kwargs a los formularios,
     # para pasarle el kwarg 'hospital', así podrá filtrar los objetos MicroorganismoHospital del hospital
