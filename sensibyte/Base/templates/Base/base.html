@@ -8,15 +8,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- Bootstrap 5 CSS CDN -->
-    {# Ahora mismo esto valdrá sin problema alguno, pero hay que tener en cuenta que podríamos descargarlo y
-    dejarlo en los statics. Ya veré, de momento el CDN me valdrá #}
+    {# Ahora mismo esto valdrá sin problema alguno, pero hay que tener en cuenta que podríamos descargarlo y dejarlo en los statics. Ya veré, de momento el CDN me valdrá #}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
-        {# Estos estilos son del template base, deben estar en todas las páginas. Ahora bien, crearé un
-            bloque extra dentro del header para cargar otros estilos o dependencias #}
+        {# Estos estilos son del template base, deben estar en todas las páginas. Ahora bien, crearé un bloque extra dentro del header para cargar otros estilos o dependencias #}
 
         .sidebar {
           min-height: 100vh;
@@ -43,6 +41,30 @@
           border-radius: 0.5rem;
           display: flex;
           align-items: center;
+        }
+
+        .alert-exito {
+            background-color: #d1e7dd;
+            color: #0a3622;
+            border: 1px solid #a3cfbb;
+            border-left: 5px solid #529b5b; /* franja lateral verde */
+            font-weight: 500;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .alert-info {
+            background-color: #cff4fc;
+            color: #055160;
+            border: 1px solid #9eeaf9;
+            border-left: 5px solid #006583; /* franja lateral azul */
+            font-weight: 500;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
         }
 
         .alert-error i {
@@ -142,7 +164,7 @@
         <div class="messages-container">
             {% for message in messages %}
             <div class="alert
-                  {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %}
+                  {% if message.tags == 'error' %}alert-error{% elif message.tags == 'success' %}alert-exito{% elif message.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %}
                   alert-dismissible fade show" role="alert">
                 <i class="bi {% if message.tags == 'error' %}bi-shield-x{% elif message.tags == 'success' %}bi-check-circle{% elif message.tags == 'warning' %}bi-exclamation-triangle{% else %}bi-info-circle{% endif %} me-2"></i>
                 {{ message }}

@@ -105,7 +105,7 @@ class PerfilAntibiogramaHospital(models.Model):
     Hereda de AliasMixin para construir su "alias"."""
     hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, related_name="perfiles_antibiograma")
     grupo_eucast = models.ForeignKey(GrupoEucast, on_delete=models.CASCADE, related_name="perfiles")
-    antibioticos = models.ManyToManyField(AntibioticoHospital)
+    antibioticos = models.ManyToManyField(AntibioticoHospital, through="PerfilAntibioticoHospital")
 
     class Meta:
         unique_together = ["hospital", "grupo_eucast"]  # combinación única por hospital
@@ -114,6 +114,23 @@ class PerfilAntibiogramaHospital(models.Model):
 
     def __str__(self):  # Mediante esta construcción podemos ver el Hospital y Grupo Eucast al que pertenece el perfil
         return f"Perfil EUCAST de {self.hospital.codigo} para {self.grupo_eucast.nombre}"
+
+
+# Modelo PerfilAntibioticoHospital
+class PerfilAntibioticoHospital(models.Model):
+    """Modelo que define para un perfil si el antibiótico debe ser mostrado o no en los informes generados"""
+    hospital = models.ForeignKey("Base.Hospital", on_delete=models.CASCADE, related_name="perfil_antibioticos")
+    perfil = models.ForeignKey(PerfilAntibiogramaHospital, on_delete=models.CASCADE)
+    antibiotico_hospital = models.ForeignKey(AntibioticoHospital, on_delete=models.CASCADE)
+    mostrar_en_informes = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ["perfil", "antibiotico_hospital"]
+        verbose_name = "Perfil antibiótico"
+        verbose_name_plural = "2. Perfil antibiótico"
+
+    def __str__(self):
+        return f"{self.antibiotico_hospital} en {self.perfil} ({'visible' if self.mostrar_en_informes else 'oculto'})"
 
 
 # Modelo MecanismoResistenciaHospital
@@ -291,7 +308,7 @@ class Registro(models.Model):
     tipo_muestra = models.ForeignKey(TipoMuestraHospital, on_delete=models.PROTECT)
 
     class Meta:
-        ordering = ["-fecha"] # Para consultas que devuelven objetos paginados
+        ordering = ["-fecha"]  # Para consultas que devuelven objetos paginados
 
     def __str__(self):
         return f"{self.fecha} | {self.nh_hash}"

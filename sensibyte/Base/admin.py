@@ -23,6 +23,8 @@
 # filter_horizontal / filter_vertical - Selector para ManyToMany
 #
 # https://docs.djangoproject.com/en/5.2/ref/contrib/admin/
+from django.contrib import messages
+from django.db import transaction
 
 from .forms import (
     AntibioticoHospitalForm, MicroorganismoHospitalForm, SexoHospitalForm, AmbitoHospitalForm, ServicioHospitalForm,
@@ -32,19 +34,11 @@ from .forms import (
 from .global_admin import *
 from .mixins import HospitalFilterAdminMixin
 from .models import (
-    AntibioticoHospital, MicroorganismoHospital, PerfilAntibiogramaHospital,
+    AntibioticoHospital, MicroorganismoHospital, PerfilAntibiogramaHospital, PerfilAntibioticoHospital,
     MecanismoResistenciaHospital, SubtipoMecanismoResistenciaHospital,
     AmbitoHospital, ServicioHospital, SexoHospital, CategoriaMuestraHospital,
-    TipoMuestraHospital, Registro, AliasInterpretacionHospital, MecResValoresPositivosHospital
+    TipoMuestraHospital, AliasInterpretacionHospital, MecResValoresPositivosHospital
 )
-
-
-# Admin Registro
-# Este panel de Registros sólo estará disponible para administradores, no para otro rol
-@admin.register(Registro)
-class RegistroAdmin(admin.ModelAdmin):
-    list_display = ["hospital", "fecha", "edad", "sexo", "ambito", "servicio", "tipo_muestra"]
-
 
 # Admin AntibioticoHospital
 @admin.register(AntibioticoHospital)
@@ -83,13 +77,42 @@ class MicroorganismoHospitalAdmin(HospitalFilterAdminMixin, admin.ModelAdmin):
 class PerfilAntibiogramaHospitalAdmin(HospitalFilterAdminMixin, admin.ModelAdmin):
     list_display = ["hospital", "grupo_eucast", "get_antibioticos"]
     autocomplete_fields = ["grupo_eucast", "antibioticos"]
+    search_fields = ["hospital__nombre", "grupo_eucast__nombre"]
+    actions = ["rellenar_antibioticos"]
 
     def get_antibioticos(self, obj):
         """Devuelve los antibióticos que pueda tener un perfil de un hospital"""
         return ", ".join([ab.antibiotico.nombre for ab in obj.antibioticos.all()])
 
+    # Acción de creación de registro de perfil de antibióticos asociados
+    @admin.action(description="Rellenar antibióticos para este perfil")
+    @transaction.atomic
+    def rellenar_antibioticos(self, request, queryset):
+        for perfil in queryset:
+            # Selecciona todos los antibióticos base del hospital
+            antibios = AntibioticoHospital.objects.filter(
+                hospital=perfil.hospital,
+                antibiotico__es_variante=False
+            )
+            creados = 0
+            for a in antibios:
+                obj, created = PerfilAntibioticoHospital.objects.get_or_create(
+                    hospital = perfil.hospital,
+                    perfil=perfil,
+                    antibiotico_hospital=a
+                )
+                if created:
+                    creados += 1
+            messages.success(request, f"{perfil}: añadidos {creados} antibióticos.")
+
     get_antibioticos.short_description = "Antibióticos"
 
+@admin.register(PerfilAntibioticoHospital)
+class PerfilAntibioticoHospitalAdmin(HospitalFilterAdminMixin, admin.ModelAdmin):
+    list_display = ["perfil", "antibiotico_hospital", "mostrar_en_informes"]
+    list_filter = ["mostrar_en_informes", "perfil__hospital", "perfil__grupo_eucast"]
+    search_fields = ["perfil__grupo_eucast__nombre", "antibiotico_hospital__antibiotico__nombre"]
+    autocomplete_fields = ["perfil", "antibiotico_hospital"]
 
 # Admin MecanismoResistenciaHospital
 @admin.register(MecanismoResistenciaHospital)
