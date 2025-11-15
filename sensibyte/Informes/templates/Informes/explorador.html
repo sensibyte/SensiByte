@@ -1,0 +1,393 @@
+{% extends "Base/base.html" %}
+{% load static %}
+
+{% block title %}Explorador de resistencias{% endblock %}
+
+{% block extra_head %}
+<!-- iconos bootstrap y estilos para Select2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+      rel="stylesheet"/>
+
+
+<style>
+    .table tr.sensibilidad-alta { background-color: #c6f6d5 !important; }  /* verde */
+    .table tr.sensibilidad-media { background-color: #fefcbf !important; }  /* amarillo */
+    .table tr.sensibilidad-baja { background-color: #fed7d7 !important; }   /* rojo */
+
+    /* El prepend no se alinea bien con el selec2 sino es con estos estilos, la idea en stackoverflow */
+    /* https://stackoverflow.com/questions/56707134/select2-with-bootstrap-theme-not-honoring-input-group-class */
+    .input-group > .select2-container--bootstrap-5 {
+      width: auto !important;
+      flex: 1 1 auto;
+    }
+
+    .input-group > .select2-container--bootstrap-5 .select2-selection--single {
+      height: 100%;
+      line-height: inherit;
+      padding: 0.5rem 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Explorador de resistencias</h5>
+        <a href="{% url 'Informes:informe_dinamico' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-clockwise"></i> Resetear
+        </a>
+    </div>
+
+    <div class="card-body">
+        <form id="filtro-form" method="post" class="row g-3">
+            {% csrf_token %}
+
+            <!-- Fechas -->
+            <div class="col-md-6">
+                <label for="{{ form.fecha_inicio.id_for_label }}" class="form-label">
+                    {{ form.fecha_inicio.label }}
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+                    {{ form.fecha_inicio }}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label for="{{ form.fecha_fin.id_for_label }}" class="form-label">
+                    {{ form.fecha_fin.label }}
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-calendar-check"></i></span>
+                    {{ form.fecha_fin }}
+                </div>
+            </div>
+
+            <!-- Edad mínima -->
+            <div class="col-md-6">
+                <label for="id_edad_min_slider" class="form-label">
+                    Edad mínima: <span id="edad_min_val">{{ form.edad_min.value|default_if_none:0 }}</span>
+                </label>
+                <input type="range" id="id_edad_min_slider" name="edad_min" min="0" max="120"
+                       value="{{ form.edad_min.value|default_if_none:0 }}" class="form-range">
+            </div>
+
+            <!-- Edad máxima -->
+            <div class="col-md-6">
+                <label for="id_edad_max_slider" class="form-label">
+                    Edad máxima: <span id="edad_max_val">{{ form.edad_max.value|default_if_none:120 }}</span>
+                </label>
+                <input type="range" id="id_edad_max_slider" name="edad_max" min="0" max="120"
+                       value="{{ form.edad_max.value|default_if_none:120 }}" class="form-range">
+            </div>
+
+            <!-- Selects -->
+            <div class="col-md-6">
+                <label class="form-label">{{ form.microorganismo.label }}</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-bug"></i></span>
+                    {{ form.microorganismo }}
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">{{ form.sexo.label }}</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-gender-ambiguous"></i></span>
+                    {{ form.sexo }}
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">{{ form.ambito.label }}</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-building"></i></span>
+                    {{ form.ambito }}
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">{{ form.servicio.label }}</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-hospital"></i></span>
+                    {{ form.servicio }}
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">{{ form.tipo_muestra.label }}</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-droplet"></i></span>
+                    {{ form.tipo_muestra }}
+                </div>
+            </div>
+
+            <!-- Opciones booleanas -->
+            <div class="col-md-6 form-check mt-4">
+                {{ form.unificar_sei_con_sensibles }}
+                <label for="{{ form.unificar_sei_con_sensibles.id_for_label }}" class="form-check-label">
+                    Unificar SEI con sensibles
+                </label>
+            </div>
+
+            <div class="col-md-6 form-check mt-4">
+                {{ form.considerar_variantes }}
+                <label for="{{ form.considerar_variantes.id_for_label }}" class="form-check-label">
+                    Considerar sólo variantes de antibióticos
+                </label>
+            </div>
+
+            <div class="col-12 text-end mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-funnel"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+{% if tabla %}
+<div class="card shadow-sm mt-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Resultados del mapa</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+            <tr>
+                <th>Antibiótico</th>
+                {% if unificar_sei_con_sensibles %}
+                    <!-- Modo S+I: 3 columnas -->
+                    <th>Sensibles / Total</th>
+                    <th>% Sensibilidad (IC 95%)</th>
+                {% else %}
+                    <!-- Modo S separado: 6 columnas -->
+                    <th>S / Total</th>
+                    <th>% Sensibilidad (S)</th>
+                    <th>I / Total</th>
+                    <th>% I (IC 95%)</th>
+                    <th>% S+I (IC 95%)</th>
+                {% endif %}
+            </tr>
+            </thead>
+            <tbody>
+            {% for fila in tabla %}
+            <tr>
+                <td><strong>{{ fila.antibiotico__antibiotico__nombre }}</strong></td>
+
+                {% if unificar_sei_con_sensibles %}
+                    <!-- Modo S+I -->
+                    <td>{{ fila.sensibles }} / {{ fila.total }}</td>
+                    <td class="{% if fila.porcentaje_s >= 85 %}table-success
+                           {% elif fila.porcentaje_s >= 50 %}table-warning
+                           {% else %}table-danger{% endif %}">
+                        {{ fila.porcentaje_s }}%
+                        {% if fila.total >= 30 %}
+                            ({{ fila.ic_low }}–{{ fila.ic_high }})
+                        {% else %}
+                            <small>*</small>
+                        {% endif %}
+                    </td>
+
+                {% else %}
+                    <!-- Modo S separado -->
+                    <td>{{ fila.sensibles }} / {{ fila.total }}</td>
+                    <td>{{ fila.porcentaje_s }}%</td>
+
+                    <td>{{ fila.sei|default:0 }} / {{ fila.total }}</td>
+                    <td>
+                        {% if fila.porcentaje_i %}
+                            {{ fila.porcentaje_i }}%
+                            {% if fila.total >= 30 and fila.sei > 0 %}
+                                {% if fila.ic_low_i %}
+                                    <small>({{ fila.ic_low_i }}–{{ fila.ic_high_i }})</small>
+                                {% endif %}
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">–</span>
+                        {% endif %}
+                    </td>
+
+                    <td class="{% if fila.porcentaje_si >= 85 %}table-success
+                           {% elif fila.porcentaje_si >= 50 %}table-warning
+                           {% else %}table-danger{% endif %}">
+                        {{ fila.porcentaje_si }}%
+                        {% if fila.total >= 30 %}
+                            ({{ fila.ic_low_si }}–{{ fila.ic_high_si }})
+                        {% else %}
+                            <small>*</small>
+                        {% endif %}
+                    </td>
+
+                {% endif %}
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <div>
+              Aislados totales:  <strong>{{total}}</strong>
+        </div>
+
+        <!-- Nota sobre el asterisco -->
+        <div class="alert alert-info mt-3">
+            <small>
+                <strong>*</strong> Los valores marcados con asterisco han sido calculados con menos de 30 observaciones.
+            </small>
+        </div>
+    </div>
+</div>
+{% else %}
+<p class="mt-4 text-center text-muted">No hay resultados para los filtros seleccionados.</p>
+{% endif %}
+
+
+{% if resumen_mecanismos %}
+<div class="card shadow-sm mt-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Mecanismos de resistencia</h5>
+    </div>
+    <div class="card-body">
+        <ul class="mb-0">
+            {% for m in resumen_mecanismos %}
+            <li>
+                <strong>{{ m.nombre }}</strong>{% if m.es_combinacion %} <span class="badge bg-info text-dark">Combinación</span>{% endif %}: {{ m.porcentaje }}%
+                ({{ m.conteo }} aislado{{ m.conteo|pluralize }})
+                {% if m.subtipos %}<br><small class="text-muted">Subtipos: {{ m.subtipos }}</small>{% endif %}
+            </li>
+            {% empty %}
+            <li>No se encontraron mecanismos asociados.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+<!-- Gráfico de resistencias a antibióticos -->
+{% if grafico_antibioticos %}
+<div class="card shadow-sm mt-4">
+    <div class="card-body">
+        {{ grafico_antibioticos|safe }}
+    </div>
+</div>
+{% endif %}
+
+<!-- Gráficos por demográficos -->
+{% if sexo_piechart or ambito_piechart or servicio_piechart or muestra_piechart %}
+<div class="card shadow-sm mt-4">
+    <div class="card-body">
+        <div class="row mt-4">
+            {% if sexo_piechart %}
+            <div class="col-md-6 mb-4">{{ sexo_piechart|safe }}</div>
+            {% endif %}
+            {% if ambito_piechart %}
+            <div class="col-md-6 mb-4">{{ ambito_piechart|safe }}</div>
+            {% endif %}
+            {% if servicio_piechart %}
+            <div class="col-md-6 mb-4">{{ servicio_piechart|safe }}</div>
+            {% endif %}
+            {% if muestra_piechart %}
+            <div class="col-md-6 mb-4">{{ muestra_piechart|safe }}</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Gráficos de CMIs por antibiótico -->
+{% if histogramas_cmi %}
+<div class="card shadow-sm mt-5">
+    <div class="card-body">
+        {{ histogramas_cmi|safe }}
+    </div>
+</div>
+{% endif %}
+
+<!-- Overlay de carga -->
+<div id="loading-overlay"
+     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background-color:rgba(255,255,255,0.8); z-index:1050; text-align:center;">
+    <div class="d-flex flex-column justify-content-center align-items-center h-100">
+        <div class="spinner-border text-primary mb-3" style="width:4rem; height:4rem;" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <h5 class="text-primary">Procesando resultados, por favor espere...</h5>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_footer %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    // basado en https://www.geeksforgeeks.org/bootstrap/bootstrap-5-range-steps/
+    // para su inicialización en 2 range, por jquery
+       $(function () {
+        const $form = $("#filtro-form"); // formulario de filtros
+        let submitTimeout;
+
+        function delayedSubmit() {
+            clearTimeout(submitTimeout);
+            submitTimeout = setTimeout(() => {
+                if ($('#id_microorganismo').val()) { // disparar sólo si microorganismo tiene ya valor
+                    $form.submit();
+                }
+            }, 1200); // 1.2s de espera
+        }
+
+        // Inicializar sliders
+        function initRange(id, valId) {
+            const $range = $("#" + id);
+            const $label = $("#" + valId);
+
+            if ($range.length && $label.length) {
+                $label.text($range.val());
+                $range.on("input", function () { $label.text($(this).val()); });
+                $range.on("change", delayedSubmit);
+            }
+        }
+
+        initRange("id_edad_min_slider", "edad_min_val");
+        initRange("id_edad_max_slider", "edad_max_val");
+
+        // Inicializar Select2
+        $("select").select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Selecciona opciones...',
+            allowClear: true,
+            width: '100%',
+            language: {
+                searching: () => '🔍 Buscando...',
+                noResults: () => '❌ No se encontraron resultados'
+            }
+        });
+
+        $('#id_microorganismo').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Selecciona un microorganismo...',
+            allowClear: true,
+            width: '100%',
+        }).on('select2:open', function() {
+            const searchField = document.querySelector('.select2-container--open .select2-search__field');
+            if (searchField) searchField.setAttribute('placeholder', '🔍 Escribe para filtrar microorganismos...');
+        }).on('change', delayedSubmit);
+
+        // Otros selects y checkboxes
+        $("select").not("#id_microorganismo").on("change", delayedSubmit);
+        $('#id_unificar_sei_con_sensibles, #id_considerar_variantes').on("change", delayedSubmit);
+
+        // Fechas
+        $("#id_fecha_fin").on("change blur", delayedSubmit);
+        $("#id_fecha_inicio").on("change blur", delayedSubmit);
+
+        // Mostrar overlay de carga al enviar formulario
+        $form.on('submit', function () {
+            $("#loading-overlay").fadeIn(150);
+        });
+    });
+</script>
+{% endblock %}
