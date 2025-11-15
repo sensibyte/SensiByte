@@ -635,13 +635,13 @@ class ReglaInterpretacion(models.Model):
             aplica_por_taxon = False  # inicializamos la variable a False por defecto
             for cond in condiciones:
                 # si el microorganismo está en la lista excluye de la condición -> descartamos la condición
-                if cond.excluye.filter(pk=microorganismo.pk).exists():
+                if cond.excluye.filter(pk=microorganismo.microorganismo.pk).exists(): # pasar el id del objeto Microorganismo
                     print(f"❌ Descarta por condición excluye: {cond}")
                     return False
                 # si el microorganismo está en la lista incluye de la condición -> aceptamos la condición y salimos del
                 # bucle for
                 if cond.incluye.exists():
-                    if cond.incluye.filter(pk=microorganismo.pk).exists():
+                    if cond.incluye.filter(pk=microorganismo.microorganismo.pk).exists(): # pasar el id del objeto Microorganismo
                         aplica_por_taxon = True
                         break
                     else:
@@ -649,7 +649,7 @@ class ReglaInterpretacion(models.Model):
                 # si no hay lista de incluidos o la hay pero el microorganismo no está incluido, aplicamos el método
                 # apply_to() de CondicionTaxonReglaInterpretacion-> si devuelve True aceptamos la condición y salimos
                 # del bucle
-                if cond.apply_to(microorganismo):
+                if cond.apply_to(microorganismo.microorganismo): # pasar el id del objeto Microorganismo
                     aplica_por_taxon = True
                     break
 

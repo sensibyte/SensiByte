@@ -36,7 +36,7 @@
 
 
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 
 from .global_models import *
 from .mixins import AliasMixin
@@ -418,6 +418,7 @@ class ReinterpretacionAntibiotico(models.Model):
                                            related_name="reinterpretaciones")
     version_eucast = models.ForeignKey(EucastVersion, on_delete=models.PROTECT)
     interpretacion_nueva = models.CharField(max_length=2, choices=ResultadoAntibiotico.INTERPRETACION_CHOICES)
+    es_reinterpretado = models.BooleanField(default=False) # Fue reinterpretado según valor CMI/halo o copiado
     fecha_reinterpretacion = models.DateTimeField(auto_now_add=True)  # Timestamp automático
 
     class Meta:
@@ -429,5 +430,168 @@ class ReinterpretacionAntibiotico(models.Model):
         verbose_name = "Reinterpretación EUCAST"
         verbose_name_plural = "Reinterpretaciones EUCAST"
 
-    def __str__(self):  # Así queda resuelto a primera vista si hubo cambio con la nueva interpretación
-        return f"{self.resultado_original} -> {self.interpretacion_nueva} ({self.version_eucast})"
+    def __str__(self):
+        flecha = "→" if self.es_reinterpretado else "="
+        return f"{self.resultado_original} {flecha} {self.interpretacion_nueva} ({self.version_eucast})"
+
+    @classmethod
+    def reinterpretar(cls, aislado, version_eucast: EucastVersion):
+        """
+        Reinterpreta TODOS los resultados antibióticos de un aislado aplicando reglas EUCAST.
+        Para cada ResultadoAntibiotico asociado al aislado:
+        - Se buscan las reglas EUCAST aplicables
+        - Si alguna aplica, se genera o actualiza la reinterpretación
+        - Si ninguna aplica, se copia la interpretación original
+        - Se aplican resistencias adquiridas basadas en mecanismos / subtipos mecanismos detectados
+        """
+
+        # Obtener datos del aislado
+        microorganismo_hospital = aislado.microorganismo
+        microorganismo = microorganismo_hospital.microorganismo
+        grupo_eucast = microorganismo.grupo_eucast
+
+        # Datos epidemiológicos del registro
+        registro = aislado.registro
+        edad = registro.edad
+        sexo = registro.sexo.sexo if registro.sexo else None
+        tipo_muestra_hospital = registro.tipo_muestra
+
+        reinterpretaciones_creadas = []
+
+        # Obtener perfil asociado al grupo EUCAST
+        try:
+            perfil = grupo_eucast.perfiles.get(hospital=aislado.hospital)
+        except:
+            print(f"⚠️ El grupo EUCAST {grupo_eucast} no tiene perfil asociado en {aislado.hospital}")
+            return reinterpretaciones_creadas
+
+        # Obtener antibióticos del perfil
+        antibioticos_hospital = perfil.antibioticos.all()
+
+        # Obtener antibióticos afectados por resistencias adquiridas
+        antibioticos_resistentes_ids = set()
+
+        # de mecanismos
+        for mecanismo in aislado.mecanismos_resistencia.all():
+            antibioticos_afectados = mecanismo.resistencia_adquirida.all()
+            antibioticos_resistentes_ids.update(ab.id for ab in antibioticos_afectados)
+
+        # de subtipos
+        for subtipo in aislado.subtipos_resistencia.all():
+            antibioticos_afectados = subtipo.resistencia_adquirida.all()
+            antibioticos_resistentes_ids.update(ab.id for ab in antibioticos_afectados)
+
+        if antibioticos_resistentes_ids:
+            print(f"🚫 Resistencias adquiridas detectadas para {len(antibioticos_resistentes_ids)} antibióticos")
+
+        for antibiotico_hospital in antibioticos_hospital:
+            antibiotico_base = antibiotico_hospital.antibiotico
+
+            # Intentar obtener el resultado para este antibiótico
+            try:
+                resultado = aislado.resultados.get(antibiotico=antibiotico_hospital)
+                cmi = resultado.cmi
+                halo = resultado.halo
+            except ResultadoAntibiotico.DoesNotExist:
+                # Si es variante, buscar el resultado del padre
+                if antibiotico_base.es_variante and antibiotico_base.parent:
+                    try:
+                        # Buscar el AntibioticoHospital del padre en el MISMO perfil
+                        antibiotico_padre_hospital = perfil.antibioticos.filter(
+                            antibiotico=antibiotico_base.parent
+                        ).first()
+
+                        if not antibiotico_padre_hospital:
+                            print(f"⚠️ Antibiótico padre {antibiotico_base.parent.nombre} no está en el perfil")
+                            continue
+
+                        resultado_padre = aislado.resultados.filter( # resultado del padre
+                            antibiotico=antibiotico_padre_hospital
+                        ).first()
+
+                        if not resultado_padre:
+                            print(f"⚠️ No hay resultado del padre {antibiotico_base.parent.nombre} para crear variante")
+                            continue
+
+                        # Crear resultado para la variante basado en el del padre
+                        resultado = ResultadoAntibiotico.objects.create(
+                            aislado=aislado,
+                            antibiotico=antibiotico_hospital,
+                            interpretacion="ND",  # Temporal, se reinterpretará
+                            cmi=resultado_padre.cmi,
+                            halo=resultado_padre.halo
+                        )
+                        cmi = resultado.cmi
+                        halo = resultado.halo
+                        print(
+                            f"🆕 Creado resultado variante {antibiotico_hospital} desde {antibiotico_base.parent.nombre}")
+
+                    except Exception as e:
+                        print(f"⚠️ Error al crear variante {antibiotico_hospital}: {e}")
+                        continue
+                else:
+                    print(f"ℹ️ No hay resultado para {antibiotico_hospital} (no es variante)")
+                    continue
+
+            # Buscar reglas aplicables
+            reglas_aplicables = ReglaInterpretacion.objects.filter(
+                antibiotico=antibiotico_base,
+                version_eucast=version_eucast
+            ).prefetch_related('condiciones_taxonomicas')
+
+            interpretacion_nueva = None
+            es_reinterpretado = False
+
+            # Intentar aplicar reglas si existen
+            for regla in reglas_aplicables:
+                if regla.apply_to(
+                        antibiotico=antibiotico_base,
+                        microorganismo=microorganismo_hospital,
+                        grupo_eucast=grupo_eucast,
+                        edad=edad,
+                        sexo=sexo,
+                        categoria_muestra=tipo_muestra_hospital,
+                        version_eucast=version_eucast
+                ):
+                    interpretacion_nueva = regla.interpret(cmi=cmi, halo=halo)
+                    print(f"✅ Regla aplicada: {regla} → {interpretacion_nueva}")
+                    es_reinterpretado = not (cmi is None and halo is None)
+                    break
+
+            # Si no se obtuvo interpretación válida
+            if interpretacion_nueva in [None, "ND"]:
+                # Descartar variantes sin regla aplicable
+                if resultado.interpretacion == "ND":
+                    print(f"🗑️ Descartando variante sin regla aplicable: {antibiotico_hospital}")
+                    resultado.delete()
+                    continue
+
+                # Copiar interpretación original
+                print(f"📝 Copiando interpretación original: {resultado.interpretacion}")
+                interpretacion_nueva = resultado.interpretacion
+                es_reinterpretado = False
+
+            # Aplicar resistencias adquiridas
+            if antibiotico_base.id in antibioticos_resistentes_ids:
+                # Solo aplicar si la interpretación actual no es ya R, NA o ND
+                if interpretacion_nueva not in ["R", "NA", "ND"]:
+                    print(f"🔴 Aplicando resistencia adquirida: {interpretacion_nueva} → R")
+                    interpretacion_nueva = "R"
+                    es_reinterpretado = True  # Esto es una modificación por mecanismo
+
+            # Crear o actualizar la reinterpretación
+            reinterpretacion, created = cls.objects.update_or_create(
+                resultado_original=resultado,
+                version_eucast=version_eucast,
+                defaults={
+                    "interpretacion_nueva": interpretacion_nueva,
+                    "es_reinterpretado": es_reinterpretado,
+                },
+            )
+
+            accion = "creada" if created else "actualizada"
+            print(f"{'✨' if created else '🔄'} Reinterpretación {accion}: {reinterpretacion}")
+
+            reinterpretaciones_creadas.append(reinterpretacion)
+
+        return reinterpretaciones_creadas

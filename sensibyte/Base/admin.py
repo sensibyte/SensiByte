@@ -25,6 +25,7 @@
 # https://docs.djangoproject.com/en/5.2/ref/contrib/admin/
 from django.contrib import messages
 from django.db import transaction
+from django.db.models import Q
 
 from .forms import (
     AntibioticoHospitalForm, MicroorganismoHospitalForm, SexoHospitalForm, AmbitoHospitalForm, ServicioHospitalForm,
@@ -58,10 +59,13 @@ class AntibioticoHospitalAdmin(HospitalFilterAdminMixin, admin.ModelAdmin):
         - https://docs.djangoproject.com/en/stable/ref/contrib/admin/#django.contrib.admin.ModelAdmin.get_search_results
         - https://stackoverflow.com/questions/64571673/how-to-override-django-get-search-results-method-in-modeladmin-while-keeping-fi
         """
-        queryset = queryset.filter(antibiotico__es_variante=False)
-        # Llamamos al método super para que aplique la búsqueda sobre el queryset filtrado.
-        return super().get_search_results(request, queryset, search_term)
-
+        if request.user.hospital:
+            queryset = queryset.filter(antibiotico__es_variante=False)
+            # Llamamos al método super para que aplique la búsqueda sobre el queryset filtrado.
+            return super().get_search_results(request, queryset, search_term)
+        else:
+            # si es el superusuario puede ver tanto variantes como no variantes
+            return super().get_search_results(request, queryset, search_term)
 
 # Admin MicroorganismoHospital
 @admin.register(MicroorganismoHospital)
@@ -89,21 +93,37 @@ class PerfilAntibiogramaHospitalAdmin(HospitalFilterAdminMixin, admin.ModelAdmin
     @transaction.atomic
     def rellenar_antibioticos(self, request, queryset):
         for perfil in queryset:
-            # Selecciona todos los antibióticos base del hospital
-            antibios = AntibioticoHospital.objects.filter(
-                hospital=perfil.hospital,
-                antibiotico__es_variante=False
+            grupo = perfil.grupo_eucast
+            hospital = perfil.hospital
+
+            # La implementación anterior no filtraba qué AntibioticoHospital incluir, necesitamos
+            # filtrar por los propios del grupo EUCAST que tienen reglas de interpretación. Así evitamos introducir,
+            # por ejemplo, 'Penicilina' en el perfil de 'Enterobacterales'
+            # Busca antibióticos válidos: según las reglas de interpretación
+            antibioticos_validos = Antibiotico.objects.filter(
+                Q(breakpoint_rules__grupo_eucast=grupo) |
+                Q(breakpoint_rules__condiciones_taxonomicas__incluye__grupo_eucast=grupo)
+            ).distinct()
+
+            # Buscamos los antibióticos del hospital
+            antibios_hosp = AntibioticoHospital.objects.filter(
+                hospital=hospital,
+                antibiotico__in=antibioticos_validos
             )
+
             creados = 0
-            for a in antibios:
+
+            # Creamos si no lo están ya
+            for a in antibios_hosp:
                 obj, created = PerfilAntibioticoHospital.objects.get_or_create(
-                    hospital = perfil.hospital,
+                    hospital=hospital,
                     perfil=perfil,
                     antibiotico_hospital=a
                 )
                 if created:
                     creados += 1
-            messages.success(request, f"{perfil}: añadidos {creados} antibióticos.")
+
+            messages.success(request, f"{perfil}: añadidos {creados} antibióticos válidos.")
 
     get_antibioticos.short_description = "Antibióticos"
 
