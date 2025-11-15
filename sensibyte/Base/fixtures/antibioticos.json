@@ -538,6 +538,7 @@
   },
   {
     "abr": "CXMon",
+    "cid": "6321416",
     "nombre": "Cefuroxima oral (ITU no complicada)",
     "familia_antibiotico": "Cefalosporinas (2da gen.)",
     "es_variante": true,
@@ -548,19 +549,6 @@
     "atc": [],
     "atc_group1": "",
     "atc_group2": ""
-  },
-  {
-    "abr": "CXA",
-    "cid": "6321416",
-    "nombre": "Cefuroxime axetil",
-    "familia_antibiotico": "Cefalosporinas (2da gen.)",
-    "atc": "",
-    "atc_group1": "",
-    "atc_group2": "",
-    "loinc": [],
-    "parent": "Cefuroxima",
-    "via_administracion": "oral",
-    "indicacion_clinica": ""
   },
   {
     "abr": "FOX-S",
