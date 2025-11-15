@@ -59,7 +59,6 @@ def build_alias_cache(queryset) -> dict:
     - Tiene en cuenta:
        * nombre principal en el modelo base (atributos 'nombre' o 'descripcion')
        * campo JSON 'alias' del objeto hospitalario (AliasMixin.alias)
-       * campo JSON 'alias' del objeto base, si existe
     La primera entrada para una clave se mantiene (no sobrescribe).
     """
     import unicodedata  # para normalizar acentos y caracteres especiales

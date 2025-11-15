@@ -420,6 +420,10 @@ class CargarAntibiogramaView(FormView):
         # 4. Versión EUCAST (para poder generar variantes de antibótico)
         version_eucast = EucastVersion.get_version_from_date(fecha)
 
+        print("***********************************")
+        print("Version EUCAST: ", version_eucast)
+        print("***********************************")
+
         # 5. Objetos para los campos hospital específicos
         sexo_obj = get_from_cache(cache["sexos_cache"], get_str(row, mapping.get("sexo", "")))
         ambito_obj = get_from_cache(cache["ambitos_cache"], get_str(row, mapping.get("ambito", "")))
@@ -524,12 +528,15 @@ class CargarAntibiogramaView(FormView):
                          muestra_obj: TipoMuestraHospital,
                          resistencias_intrinsecas: set[int]) -> dict[int, tuple[str, float | None, float | None]]:
 
-        """Procesa todos los antibióticos y retorna resultados completos"""
+        """Procesa todos los antibióticos y retorna resultados completos.
+        Las claves del diccionario retornado son IDs de objetos Antibiotico mientras que los valores
+        son tuplas (interpretacion, cmi, halo).
+        """
 
-        resultados_procesados = {}  # diccionario almacén de resultados de retorno
+        resultados_procesados = {} # diccionario almacén de resultados de retorno
 
         # Por cada número id y lista de alias asociada al id en 'nombres_ab_dict'
-        for id, alias in nombres_ab_dict.items():
+        for antibiotico_hospital_id, alias in nombres_ab_dict.items():
 
             # 1. Verificar si hay datos de interpretación, cmi y halo válidos
             # extraemos los datos del CSV
@@ -538,9 +545,9 @@ class CargarAntibiogramaView(FormView):
             halo_col, halo_valor = search_halo_in_columns(row, alias)
 
             # obtenemos el objeto AntibioticoHospital a partir de su id
-            antibiotico_hospital = antibioticos_dict[id]
+            antibiotico_hospital = antibioticos_dict[antibiotico_hospital_id]
 
-            antibiotico_base = antibiotico_hospital.antibiotico  # Y el cd Antibiotico padre
+            antibiotico_base = antibiotico_hospital.antibiotico # Y el cd Antibiotico padre
 
             # verificamos si hay datos (interpretación o CMI o halo)
             tiene_datos = not (
@@ -549,11 +556,11 @@ class CargarAntibiogramaView(FormView):
                     (pd.isna(halo_valor) or halo_valor is None)  # nulos en halo_valor
             )  # con que en una de las condiciones no haya nulos, hay False-> not(False) = True-> tiene datos
 
+
+            # Si no hay datos, NO guardamos nada (ni el base ni las variantes)
             if not tiene_datos:
-                # si no hay datos, la interpretación tiene que ser ND: no disponible y pasamos al siguiente AntibioticoHospital
-                print(f"📝 Sin datos para {antibiotico_base.nombre}, creando como ND")
-                resultados_procesados[id] = ("ND", None, None)  # incorporamos el resultado "ND" al almacén
-                continue  # pasamos al siguiente antibiótico
+                print(f"📝 Sin datos para {antibiotico_base.nombre}, se omite completamente")
+                continue
 
             # si hay datos se procesa la interpretación del resultado para obtener su valor estandarizado
             interpretacion_std = self._get_interpretation(interpretacion, alias_hospital)
@@ -566,15 +573,15 @@ class CargarAntibiogramaView(FormView):
             tiene_cmi_valida = cmi_float is not None
             tiene_halo_valido = halo_float is not None
 
-            # si no tenemos ninguno de los resultados: ni interpretación, cmi o halo -> interpretación "ND"
+            # si no tenemos ninguno de los resultados: ni interpretación, cmi o halo, pasamos al siguiente antibiótico
             if not (tiene_interpretacion_valida or tiene_cmi_valida or tiene_halo_valido):
-                print(f"⚠️ Datos inválidos para {antibiotico_base.nombre}, marcando como ND")
-                resultados_procesados[id] = ("ND", None, None)  # incorporamos el resultado "ND" al almacén
+                print(f"⚠️ Datos inválidos para {antibiotico_base.nombre}, se omite")
                 continue
 
             # 2. Aplicar la resistencia intrínseca
             # Buscamos el AntibioticoHospital dentro de set de resistencias intrínsecas
-            if id in resistencias_intrinsecas:
+            # Si tiene resistencia intrínseca, marcamos base + variantes como "R"
+            if antibiotico_base.id in resistencias_intrinsecas:
                 print(  # mensaje al log
                     f"🚫 {microorganismo.microorganismo.nombre} tiene resistencia intrínseca a {antibiotico_base.nombre}")
 
@@ -582,24 +589,40 @@ class CargarAntibiogramaView(FormView):
                 # Nota: utilizamos objetos Q, que con sintaxis sencilla permiten combinar condiciones en una sola consulta
                 # ref: https://docs.djangoproject.com/en/5.2/topics/db/queries/#complex-lookups-with-q-objects
                 variantes_relacionadas = Antibiotico.objects.filter(  # realizamos la consulta a la base de datos
-                    Q(parent=antibiotico_base) | Q(id=id)  # incluye el antibiótico padre y la variante
+                    Q(parent=antibiotico_base) | Q(id=antibiotico_base.id)  # incluye el antibiótico padre y la variante
                 )
+
                 for variante in variantes_relacionadas:  # marcamos como "R"
                     resultados_procesados[variante.id] = ("R", cmi_float,
                                                           halo_float)  # incorporamos el resultado al almacén
+                    print(f"   -> {variante.nombre} marcado como R (Antibiotico.id: {variante.id})")
+
                 continue  # pasamos al siguiente antibiótico con resistencia intrínseca
 
-            # 3. Aplicar reglas EUCAST: obtiene la interpretación de categoría clínica en variantes de antibiótico por
+
+            # 3. Guardar el antibiótico BASE con su interpretación original (NO habrá una reinterpretación)
+            print(
+                f"📌 Guardando antibiótico base: {antibiotico_base.nombre} - Interp: {interpretacion_std}, CMI: {cmi_float}, Halo: {halo_float}")
+            resultados_procesados[antibiotico_base.id] = (interpretacion_std, cmi_float, halo_float)
+
+            # 4. Aplicar reglas EUCAST a VARIANTES: obtiene la interpretación de categoría clínica en variantes de antibiótico por
             # dosificación o clínica. Por ejemplo, Amoxicilina-clavulánico posee distintos puntos de corte en función de su
             # su dosificación (oral o intravenosa) y la clínica asociada (ITU no complicada, asociada a ITU, otras)
-            resultados_con_reglas = self._apply_eucast_breakpoints(
-                antibiotico_hospital, interpretacion_std, cmi_float, halo_float,
+            resultados_variantes = self._apply_eucast_breakpoints(
+                antibiotico_hospital, cmi_float, halo_float,
                 version_eucast, microorganismo, edad, sexo_obj, muestra_obj
             )
 
-            resultados_procesados.update(resultados_con_reglas)  # añade al almacén los resultados obtenidos por reglas
+            # Se agregan sólo las variantes que apliquen (el BASE ya se guardó)
+            if resultados_variantes:
+                # Filtrar para no sobrescribir el base si viene en resultados_variantes
+                for var_id, resultado in resultados_variantes.items():
+                    if var_id != antibiotico_base.id:  # Solo agregar variantes, no el base
+                        resultados_procesados[var_id] = resultado
+                        print(f"   ✅ Variante agregada: ID {var_id} - {resultado[0]}")
 
-        return resultados_procesados  # devolvemos el diccionario almacén de resultados
+        return resultados_procesados
+
 
     @staticmethod
     def _parse_mic_and_halo(cmi_valor: str | None, halo_valor: str | None) -> tuple[float | None, float | None]:
@@ -648,8 +671,7 @@ class CargarAntibiogramaView(FormView):
         return interpretacion_std  # devuelve la cadena de interpretación
 
     @staticmethod
-    def _apply_eucast_breakpoints(antibiotico_base: AntibioticoHospital,
-                                  interpretacion: str | None,
+    def _apply_eucast_breakpoints(antibiotico_hospital: AntibioticoHospital,
                                   cmi: float | None,
                                   halo: float | None,
                                   version_eucast: EucastVersion,
@@ -658,26 +680,30 @@ class CargarAntibiogramaView(FormView):
                                   sexo_obj: SexoHospital,
                                   muestra_obj: TipoMuestraHospital) -> dict[
         int, tuple[str | None, float | None, float | None]]:
-        """Aplica reglas EUCAST y retorna resultados para base + variantes"""
+        """Aplica reglas EUCAST y retorna resultados SOLO para las variantes que aplican"""
 
-        # Inicializamos un diccionario contenedor de resultados
-        resultados = {antibiotico_base.antibiotico.id: (interpretacion, cmi, halo)}
 
-        # Buscamos las variantes relacionadas en la base de datos
-        variantes_relacionadas = list(  # list[Antibiotico]
-            Antibiotico.objects.filter(
-                Q(id=antibiotico_base.antibiotico.id) | Q(parent=antibiotico_base.antibiotico)
-            )
+        resultados = {}
+        antibiotico_base = antibiotico_hospital.antibiotico
+
+        # Buscamos SOLO las variantes relacionadas en la base de datos
+        variantes_relacionadas = list(  #list[Antibiotico]
+            Antibiotico.objects.filter(parent=antibiotico_base)
         )
 
-        # Buscamos reglas aplicables en la bse de datos
+        if not variantes_relacionadas:
+            print(f"ℹ️ No hay variantes para {antibiotico_base.nombre}")
+            return resultados  # Diccionario vacío
+
+        # Buscamos reglas aplicables SOLO para las variantes
         reglas_aplicables = ReglaInterpretacion.objects.filter(
             antibiotico__in=variantes_relacionadas,
             version_eucast=version_eucast
         )
 
         if not reglas_aplicables.exists():  # si no hay reglas asociadas se devuelve el diccionario vacío
-            return resultados
+            print(f"ℹ️ No hay reglas EUCAST para variantes de {antibiotico_base.nombre} (versión {version_eucast})")
+            return resultados  # Diccionario vacío
 
         # Aplicamos reglas de una en una
         for regla in reglas_aplicables:
@@ -691,19 +717,19 @@ class CargarAntibiogramaView(FormView):
                 categoria_muestra=muestra_obj,
                 version_eucast=version_eucast
             )
-
             # si no aplica la regla del bucle, log de descarte en la consola y continuar con a siguiente regla
             if not aplica:
-                print(f"❌ Regla descartada: {regla.antibiotico} ({regla.version_eucast})")
+                print(f"❌ Regla descartada: {regla.antibiotico.nombre} ({regla.version_eucast})")
                 continue
 
             # si la regla aplica obtenemos la interpretación con su método interpret()
-            print(f"✅ Regla aplicada correctamente: {regla.antibiotico}")
+            print(f"✅ Regla aplicada correctamente: {regla.antibiotico.nombre}")
             print(f"   CMI: {cmi}, Halo: {halo}")
 
             # aplica la regla con CMI y halo
             interp_regla = regla.interpret(cmi=cmi, halo=halo)
 
+            # Guardamos la variante con su interpretación
             resultados[regla.antibiotico.id] = (interp_regla, cmi,
                                                 halo)  # incorporamos los resultados de interpretación
                                                        # al dicccionario contenedor
@@ -837,18 +863,22 @@ class CargarAntibiogramaView(FormView):
                 continue
 
             # 2. Extrae o crea el AntibioticoHospital asociado al Antibiotico
-            ab_hosp, _ = AntibioticoHospital.objects.get_or_create(
+            ab_hosp, created = AntibioticoHospital.objects.get_or_create(
                 antibiotico=antibiotico_obj,
                 hospital=hospital
             )
 
+            if created:
+                print(f"🆕 AntibioticoHospital creado para {antibiotico_obj.nombre}")
+
             # 3. Verifica la resistencia intrínseca
             interp_to_save = "R" if id in resistencias_intrinsecas else interp
 
-            # 4. Verificación de resultados: si todo es None o "ND"
+            # 4. Verificación de resultados: NO guardamos resultados completamente vacíos
+            # Si la interpretación es None o "ND", Y no hay CMI ni halo, lo omitimos
             if interp_to_save in ["ND", None] and cmi is None and halo is None:
-                print(f"⚠️ Resultado vacío para {antibiotico_obj.nombre}: {interp_to_save}")
-                # continue -> guardo el antibiograma completo con "ND" para esos antibióticos
+                print(f"⚠️ Resultado vacío para {antibiotico_obj.nombre}, se omite")
+                continue
 
             # 5. Crea el objeto ResultadoAntibiotico
             print(
