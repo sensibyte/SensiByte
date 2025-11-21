@@ -110,7 +110,7 @@ class PerfilAntibiogramaHospital(models.Model):
     class Meta:
         unique_together = ["hospital", "grupo_eucast"]  # combinación única por hospital
         verbose_name = "Perfil de antibiograma"
-        verbose_name_plural = "2. Perfiles de antibiograma"
+        verbose_name_plural = "3. Perfiles de antibiograma"
 
     def __str__(self):  # Mediante esta construcción podemos ver el Hospital y Grupo Eucast al que pertenece el perfil
         return f"Perfil EUCAST de {self.hospital.codigo} para {self.grupo_eucast.nombre}"
@@ -126,8 +126,8 @@ class PerfilAntibioticoHospital(models.Model):
 
     class Meta:
         unique_together = ["perfil", "antibiotico_hospital"]
-        verbose_name = "Perfil antibiótico"
-        verbose_name_plural = "2. Perfil antibiótico"
+        verbose_name = "Antibiótico en perfil"
+        verbose_name_plural = "4. Antibióticos en perfiles"
 
     def __str__(self):
         return f"{self.antibiotico_hospital} en {self.perfil} ({'visible' if self.mostrar_en_informes else 'oculto'})"
@@ -150,8 +150,8 @@ class MecanismoResistenciaHospital(AliasMixin, models.Model):
 
     class Meta:
         unique_together = ["hospital", "mecanismo"]  # combinación única por hospital
-        verbose_name = "Perfil de antibiograma"
-        verbose_name_plural = "2. Mecanismos de resistencia"
+        verbose_name = "Mecanismo de resistencia"
+        verbose_name_plural = "5. Mecanismos de resistencia"
 
     def __str__(self):
         return f"{self.mecanismo.nombre}"  # Nombre del mecanismo de resistencia
@@ -172,7 +172,7 @@ class SubtipoMecanismoResistenciaHospital(AliasMixin, models.Model):
     class Meta:
         unique_together = ["hospital", "subtipo_mecanismo"]  # combinación única por hospital
         verbose_name = "Subtipo Mecanismo de Resistencia"
-        verbose_name_plural = "2. Subtipos Mecanismo de Resistencia"
+        verbose_name_plural = "6. Subtipos Mecanismo de Resistencia"
 
     def __str__(self):
         return f"{self.subtipo_mecanismo.nombre}"  # Nombre del subtipo de mecanismo de resistencia
@@ -194,7 +194,7 @@ class AmbitoHospital(AliasMixin, models.Model):
     class Meta:
         unique_together = ["hospital", "ambito"]  # combinación única por hospital
         verbose_name = "Ámbito"
-        verbose_name_plural = "2. Ámbitos"
+        verbose_name_plural = "7. Ámbitos"
 
     def __str__(self):
         return self.ambito.nombre  # Nombre del ámbito
@@ -215,6 +215,8 @@ class ServicioHospital(AliasMixin, models.Model):
 
     class Meta:
         unique_together = ["hospital", "servicio"]  # combinación única por hospital
+        verbose_name = "Servicio"
+        verbose_name_plural = "8. Servicios"
 
     def __str__(self):
         return self.servicio.nombre  # nombre del servicio
@@ -235,6 +237,8 @@ class SexoHospital(AliasMixin, models.Model):
 
     class Meta:
         unique_together = ["hospital", "sexo"]  # combinación única por hospital
+        verbose_name = "Sexo"
+        verbose_name_plural = "9. Sexos"
 
     def __str__(self):
         return self.sexo.descripcion  # descripción del tipo de sexo asociado
@@ -258,6 +262,8 @@ class CategoriaMuestraHospital(models.Model):
 
     class Meta:
         unique_together = ["hospital", "nombre"]  # combinación única por hospital
+        verbose_name = "Categoría Muestra"
+        verbose_name_plural = "10. Categorías Muestra"
 
     def __str__(self):
         return self.nombre
@@ -277,6 +283,8 @@ class TipoMuestraHospital(AliasMixin, models.Model):
 
     class Meta:
         unique_together = ["hospital", "tipo_muestra", "categoria"]  # combinación única por hospital
+        verbose_name = "Muestra"
+        verbose_name_plural = "11. Muestras"
 
     def __str__(self):
         return self.tipo_muestra.nombre  # nombre del tipo de muestra
@@ -289,6 +297,10 @@ class MecResValoresPositivosHospital(AliasMixin, models.Model):
     Por ejemplo, es habitual encontrar la columna Esbl pero puede ser "Positivo", "+", etc.
     dependiendo del Hospital. """
     hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, related_name="mecres_pos_hospital")
+
+    class Meta:
+        verbose_name = "Alias valor positivo Mecanismo de Resistencia"
+        verbose_name_plural = "12. Alias valores positivos Mecanismo de Resistencia"
 
 
 # Modelo Registro
@@ -396,8 +408,8 @@ class AliasInterpretacionHospital(AliasMixin, models.Model):
     interpretacion = models.CharField(max_length=2, choices=ResultadoAntibiotico.INTERPRETACION_CHOICES)
 
     class Meta:
-        verbose_name = "Valor de interpretación"
-        verbose_name_plural = "Valores de interpretaciones"
+        verbose_name = "Alias valor de interpretación"
+        verbose_name_plural = "13. Alias valores de interpretaciones"
 
     def get_standard_interp(self, valor: str) -> str | None:
         """ Devuelve la interpretación estándar ("S", "I", "R", "ND") según el valor recibido."""
