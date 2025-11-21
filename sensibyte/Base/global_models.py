@@ -455,15 +455,19 @@ class CondicionTaxonReglaInterpretacion(models.Model):
 
         # 1 Excluir si está explícitamente en la lista 'excluye'
         if self.excluye.filter(pk=microorganismo.pk).exists():
+            print(f"❌ Descartado porque el microorganismo está en la lista de excluidos")
             return False
 
         # 2. Si hay lista de incluye y no está incluido -> no aplica (False)
         if self.incluye.exists() and not self.incluye.filter(pk=microorganismo.pk).exists():
+            print(f"❌ Descartado porque el microorganismo no está en la lista de incluidos")
             return False
 
         # 3. Si es personalizado -> ver si está en la lista incluye (existe?)
         if self.scope == "personalizado":
-            return self.incluye.filter(pk=microorganismo.pk).exists()
+            incluido = self.incluye.filter(pk=microorganismo.pk).exists()
+            print(f"✔️ Incluido en lista personalizada") if incluido else print(f"❌ No incluido en lista personalizada")
+            return incluido
 
         # 4. Evaluación jerárquica de inclusión por scope
         for inc in self.incluye.all():
@@ -472,14 +476,17 @@ class CondicionTaxonReglaInterpretacion(models.Model):
             # Comparamos los nombres del microorganismo incluido frente al del microorganismo del argumento
             if self.scope == "especie":
                 if inc.nombre.lower() == microorganismo.nombre.lower():
+                    print(f"✔️ Incluido por especie")
                     return True  # si coinciden, aplica
 
             elif self.scope == "genero":
                 if inc.genero and inc.genero.lower() == microorganismo.genero.lower():
+                    print(f"✔️ Incluido por género")
                     return True
 
             elif self.scope == "familia":
                 if inc.familia and inc.familia.lower() == microorganismo.familia.lower():
+                    print(f"✔️ Incluido por familia")
                     return True
 
             elif self.scope == "grupo":
@@ -491,6 +498,7 @@ class CondicionTaxonReglaInterpretacion(models.Model):
                         # del argumento
                         and inc.grupo_eucast.nombre.lower() == microorganismo.grupo_eucast.nombre.lower()  # verificamos
                 ):
+                    print(f"✔️ Incluido por grupo EUCAST")
                     return True  # si coinciden los grupos, aplica
 
         # 5. Evaluación jerárquica de exclusión por scope
@@ -499,17 +507,22 @@ class CondicionTaxonReglaInterpretacion(models.Model):
             # superior, por lo que no puedo depender del valor del scope, tiene que inferirse al vuelo.
             # Procede de forma análoga al bloque de inclusiones
             if exc.nombre.lower() == microorganismo.nombre.lower():
+                print(f"❌ Descartado porque el microorganismo está en lista de excluidos")
                 return False
             elif exc.genero and exc.genero.lower() == microorganismo.genero.lower():
+                print(f"❌ Descartado porque el género está en lista de excluidos")
                 return False
             elif exc.familia and exc.familia.lower() == microorganismo.familia.lower():
+                print(f"❌ Descartado porque la familia está en lista de excluidos")
                 return False
             elif (
                     getattr(exc, "grupo_eucast", None)
                     and getattr(microorganismo, "grupo_eucast", None)
                     and exc.grupo_eucast.nombre.lower() == microorganismo.grupo_eucast.nombre.lower()
             ):
+                print(f"❌ Descartado porque el grupo EUCAST está en lista de excluidos")
                 return False
+        print(f"✔️ No hubo descarte por ningún motivo")
         return True  # si al final no hay exclusión
 
     def __str__(self):
@@ -643,6 +656,7 @@ class ReglaInterpretacion(models.Model):
                 if cond.incluye.exists():
                     if cond.incluye.filter(pk=microorganismo.microorganismo.pk).exists(): # pasar el id del objeto Microorganismo
                         aplica_por_taxon = True
+                        print(f"✔️ El microorganismo está en la lista de incluidos de la condición")
                         break
                     else:
                         continue

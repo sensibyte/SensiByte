@@ -276,7 +276,7 @@ class TipoMuestraHospital(AliasMixin, models.Model):
     tipo_muestra = models.ForeignKey(TipoMuestra, on_delete=models.CASCADE, related_name="tipos_muestra")
 
     class Meta:
-        unique_together = ["hospital", "tipo_muestra"]  # combinación única por hospital
+        unique_together = ["hospital", "tipo_muestra", "categoria"]  # combinación única por hospital
 
     def __str__(self):
         return self.tipo_muestra.nombre  # nombre del tipo de muestra

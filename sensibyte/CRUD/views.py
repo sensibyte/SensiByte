@@ -420,10 +420,6 @@ class CargarAntibiogramaView(FormView):
         # 4. Versión EUCAST (para poder generar variantes de antibótico)
         version_eucast = EucastVersion.get_version_from_date(fecha)
 
-        print("***********************************")
-        print("Version EUCAST: ", version_eucast)
-        print("***********************************")
-
         # 5. Objetos para los campos hospital específicos
         sexo_obj = get_from_cache(cache["sexos_cache"], get_str(row, mapping.get("sexo", "")))
         ambito_obj = get_from_cache(cache["ambitos_cache"], get_str(row, mapping.get("ambito", "")))

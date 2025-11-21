@@ -194,7 +194,7 @@ class CategoriaMuestraHospitalAdmin(HospitalFilterAdminMixin, admin.ModelAdmin):
 @admin.register(TipoMuestraHospital)
 class TipoMuestraHospitalAdmin(HospitalFilterAdminMixin, admin.ModelAdmin):
     form = TipoMuestraHospitalForm
-    list_display = ["hospital", "tipo_muestra__nombre", "get_alias"]
+    list_display = ["hospital", "tipo_muestra__nombre", "get_alias", "categoria__nombre"]
     list_filter = ["hospital", "categoria"]
     search_fields = ["tipo_muestra__nombre"]
 

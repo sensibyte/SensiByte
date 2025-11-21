@@ -134,6 +134,7 @@ def get_from_cache(cache, value):
     if not value:
         return None
     key = value.strip().lower()
+    key = "".join(c for c in unicodedata.normalize("NFD", key) if unicodedata.category(c) != "Mn")
     if key in cache:
         return cache[key]
 
