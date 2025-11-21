@@ -248,7 +248,7 @@ class ResultadosResistenciaView(FormView):
             resistencias_intrinsecas_ids,
             tiene_variantes,
             filtro_antibiotico
-        )
+        ) or {}
 
         context = self.get_context_data(
             form=form,
