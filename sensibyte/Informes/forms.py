@@ -1,4 +1,6 @@
 from django import forms
+from datetime import date
+from dateutil.relativedelta import relativedelta
 from django.core.exceptions import ValidationError
 
 from Base.models import (SexoHospital, MicroorganismoHospital, AmbitoHospital, ServicioHospital, CategoriaMuestraHospital)
@@ -59,6 +61,12 @@ class FiltroResistenciaForm(forms.Form):
             self.fields["ambito"].queryset = AmbitoHospital.objects.filter(hospital=hospital, ignorar_informes=False)
             self.fields["servicio"].queryset = ServicioHospital.objects.filter(hospital=hospital, ignorar_informes=False)
             self.fields["tipo_muestra"].queryset = CategoriaMuestraHospital.objects.filter(hospital=hospital, ignorar_informes=False)
+
+        # Establecer valores por defecto de fechas
+        if not self.data.get('fecha_fin'):
+            self.initial['fecha_fin'] = date.today()
+        if not self.data.get('fecha_inicio'):
+            self.initial['fecha_inicio'] = date.today() - relativedelta(years=3)  # 3 años atrás
 
     # sobreescribimos el método clean() para evitar inconsistencias en los filtros y pasar mensajes en español apropiados
     def clean(self):
@@ -138,6 +146,12 @@ class InformePredefinidoResistenciaForm(forms.Form):
             self.fields["microorganismo"].queryset = MicroorganismoHospital.objects.filter(hospital=hospital)
             self.fields["servicio"].queryset = ServicioHospital.objects.filter(hospital=hospital, ignorar_informes=False)
             self.fields["categoria_muestra"].queryset = CategoriaMuestraHospital.objects.filter(hospital=hospital, ignorar_informes=False)
+
+        # Establecer valores por defecto de fechas
+        if not self.data.get('fecha_final'):
+            self.initial['fecha_final'] = date.today()
+        if not self.data.get('fecha_inicial'):
+            self.initial['fecha_inicial'] = date.today() - relativedelta(years=3)  # 3 años atrás
 
     def clean(self):
         cleaned_data = super().clean()
