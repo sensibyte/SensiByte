@@ -8,34 +8,110 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- Bootstrap 5 CSS CDN -->
-    {# Ahora mismo esto valdrá sin problema alguno, pero hay que tener en cuenta que podríamos descargarlo y dejarlo en los statics. Ya veré, de momento el CDN me valdrá #}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 
     <style>
-        {# Estos estilos son del template base, deben estar en todas las páginas. Ahora bien, crearé un bloque extra dentro del header para cargar otros estilos o dependencias #}
-
+        /* Estilos del sidebar */
         .sidebar {
           min-height: 100vh;
           background-color: #f8f9fa;
           padding: 1rem;
           border-right: 1px solid #dee2e6;
+          position: fixed;
+          top: 120px;
+          left: 0;
+          bottom: 0;
+          overflow-y: auto;
+          z-index: 1000;
+          transition: transform 0.3s ease-in-out;
         }
+
         .sidebar a {
           display: block;
           margin-bottom: 0.75rem;
           color: #333;
           text-decoration: none;
         }
+
         .sidebar a:hover {
           text-decoration: underline;
         }
+
+        /* Botón hamburguesa */
+        .sidebar-toggle {
+          position: fixed;
+          top: 35px; /* Centrado en el header */
+          left: 15px;
+          z-index: 1050; /* Por encima del header */
+          background-color: rgba(255, 255, 255, 0.2);
+          color: white;
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          border-radius: 5px;
+          padding: 0.5rem 0.75rem;
+          cursor: pointer;
+          display: none;
+        }
+
+        .sidebar-toggle:hover {
+          background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Ajustar el contenedor del logo en móvil */
+        @media (max-width: 768px) {
+          header .container-fluid {
+            justify-content: center !important; /* Centrar el logo */
+          }
+        }
+
+        /* Overlay para cerrar sidebar en móvil */
+        .sidebar-overlay {
+          display: none;
+          position: fixed;
+          top: 120px;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0, 0, 0, 0.5);
+          z-index: 999;
+        }
+
+        /* Contenedor principal con margen para el sidebar */
+        .main-container {
+          margin-left: 16.666667%; /* equivalente a col-md-2 */
+        }
+
+        /* Responsive: ocultar sidebar en pantallas pequeñas */
+        @media (max-width: 768px) {
+          .sidebar {
+            transform: translateX(-100%);
+            width: 250px;
+          }
+
+          .sidebar.show {
+            transform: translateX(0);
+          }
+
+          .sidebar-toggle {
+            display: block;
+          }
+
+          .sidebar-overlay.show {
+            display: block;
+          }
+
+          .main-container {
+            margin-left: 0;
+          }
+        }
+
+        /* Estilos de alertas */
         .alert-error {
-          background-color: #f8d7da;  /* fondo rojo claro */
-          color: #842029;             /* texto rojo oscuro */
+          background-color: #f8d7da;
+          color: #842029;
           border: 1px solid #f5c2c7;
-          border-left: 5px solid #dc3545; /* franja lateral roja */
+          border-left: 5px solid #dc3545;
           font-weight: 500;
           padding: 0.75rem 1rem;
           border-radius: 0.5rem;
@@ -47,7 +123,7 @@
             background-color: #d1e7dd;
             color: #0a3622;
             border: 1px solid #a3cfbb;
-            border-left: 5px solid #529b5b; /* franja lateral verde */
+            border-left: 5px solid #529b5b;
             font-weight: 500;
             padding: 0.75rem 1rem;
             border-radius: 0.5rem;
@@ -59,7 +135,7 @@
             background-color: #cff4fc;
             color: #055160;
             border: 1px solid #9eeaf9;
-            border-left: 5px solid #006583; /* franja lateral azul */
+            border-left: 5px solid #006583;
             font-weight: 500;
             padding: 0.75rem 1rem;
             border-radius: 0.5rem;
@@ -71,7 +147,7 @@
             background-color: #fff3cd;
             color: #664d03;
             border: 1px solid #ffe69c;
-            border-left: 5px solid #fbbc00; /* franja lateral naranja */
+            border-left: 5px solid #fbbc00;
             font-weight: 500;
             padding: 0.75rem 1rem;
             border-radius: 0.5rem;
@@ -83,13 +159,10 @@
           margin-right: 0.5rem;
           font-size: 1.2rem;
         }
-
     </style>
 
-    <!-- Bloque extra header -->
     {% block extra_head %}
     {% endblock %}
-
 </head>
 <body class="d-flex flex-column min-vh-100">
 
@@ -106,11 +179,19 @@
     </div>
 </header>
 
+<!-- Botón hamburguesa (visible solo en dispositivos móviles) -->
+<button class="sidebar-toggle" id="sidebarToggle">
+    <i class="bi bi-list" style="font-size: 1.5rem;"></i>
+</button>
+
+<!-- Overlay para cerrar sidebar en dispositivos móviles -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
 <!-- Contenedor principal: sidebar + contenido -->
 <div class="d-flex flex-grow-1" style="margin-top: 120px; min-height: 0;">
 
     <!-- Sidebar izquierda -->
-    <nav class="sidebar col-md-3 col-lg-2">
+    <nav class="sidebar col-md-3 col-lg-2" id="sidebar">
         <h6 class="fw-bold mb-3">Navegación</h6>
 
         <!-- Enlace simple -->
@@ -130,17 +211,17 @@
             </div>
         </div>
 
-        <!-- Grupo desplegable: Resultados. Esperaré a implementarlo para enlazarlo -->
-
+        <!-- Grupo desplegable: Resultados -->
         <div class="mb-2">
             <a class="fw-semibold" data-bs-toggle="collapse" href="#submenuResultados" role="button"
                aria-expanded="false" aria-controls="submenuAislados">
                 <span class="me-1">📝</span> Resultados
             </a>
             <div class="collapse ps-3" id="submenuResultados">
-                <a href="" class="d-block">Explorador</a>
-                <a href="">Informes predefinidos</a>
-                <a href="">Análisis tendencias</a>
+                <a href="{% url 'Informes:informe_dinamico' %}" class="d-block">Explorador</a>
+                <a href="{% url 'Informes:informe_acumulado' %}">Informes predefinidos</a>
+                <a href="{% url 'Tendencias:reinterpretar_resultados' %}">Reinterpretación de resultados</a>
+                <a href="{% url 'Tendencias:analisis_tendencias' %}">Análisis tendencias</a>
             </div>
         </div>
 
@@ -154,7 +235,6 @@
 
         <!-- Logout -->
         {% if user.is_authenticated %}
-        <!-- Django requiere POST para hacer logout -->
         <form method="post" action="{% url 'Base:logout' %}" class="mb-2">
             {% csrf_token %}
             <button type="submit"
@@ -162,14 +242,13 @@
                     onmouseover="this.style.textDecoration='underline';"
                     onmouseout="this.style.textDecoration='none';">
                 <span class="me-1">🚪</span> Salir
+            </button>
         </form>
         {% endif %}
-
     </nav>
 
-
     <!-- Contenido principal -->
-    <main class="container-fluid py-4 px-4 col">
+    <main class="container-fluid py-4 px-4 col main-container">
 
         <!-- Bloque de mensajes compartido -->
         {% if messages %}
@@ -201,14 +280,46 @@
 
 <!-- Footer -->
 <footer class="bg-light text-center py-3 text-muted border-top mt-auto">
-    &copy; {{ now|date:"Y" }} - Sistema de interpretación de antibiogramas
+    &copy; {{ now|date:"Y" }} - Sensibyte
 </footer>
 
-<!-- Bootstrap JS (opcional) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
-{# Puede que utilice JQuery más adelante, añado un bloque extra de scripts #}
-<!-- Bloque extra scripts -->
+<!-- Script para toggle del sidebar -->
+<script>
+    $(document).ready(function() {
+    const $sidebar = $('#sidebar');
+    const $sidebarToggle = $('#sidebarToggle');
+    const $sidebarOverlay = $('#sidebarOverlay');
+
+    // Función para abrir/cerrar sidebar
+    function toggleSidebar() {
+        $sidebar.toggleClass('show');
+        $sidebarOverlay.toggleClass('show');
+    }
+
+    // Click en el botón hamburguesa
+    $sidebarToggle.on('click', toggleSidebar);
+
+    // Click en el overlay para cerrar
+    $sidebarOverlay.on('click', toggleSidebar);
+
+    // Cerrar sidebar en enlaces que NO son 'collapse toggles'
+    if ($(window).width() <= 768) { // cuando el ancho es de móvil, menos de 768px
+        $sidebar.find('a').on('click', function(e) {
+            // No cerrar si el enlace tiene data-bs-toggle="collapse"
+            if (!$(this).attr('data-bs-toggle')) {
+                if ($sidebar.hasClass('show')) {
+                    toggleSidebar();
+                }
+            }
+        });
+    }
+});
+</script>
+
 {% block extra_footer %}{% endblock %}
 </body>
 </html>
