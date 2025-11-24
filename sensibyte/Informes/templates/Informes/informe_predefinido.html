@@ -1,64 +1,97 @@
 {% extends "Base/base.html" %}
 
+{% block extra_head %}
+<style>
+     .card {
+      border-radius: 1rem; /* borde redondeado */
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05); /* sombra */
+      border: 1px solid #dee2e6;
+    }
+    .section-title {
+      font-weight: 600;
+      color: #0d6efd; /* fuente de color azul */
+    }
+
+    /* Para la pantalla de espera de carga */
+    #loading-overlay {
+      position: fixed; /* no permite scroll */
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%; /* ocupa toda la pantalla */
+      background: rgba(255,255,255,0.95); /* fondo prácticamente opaco */
+      z-index: 9999; /* por encima de cualquier elemento */
+      display: flex;
+      justify-content: center;
+      align-items: center; /* centrado */
+    }
+</style>
+
+{% endblock %}
+
+
 {% block content %}
-  <div class="container mt-5">
-    <h2>Generar informe acumulado de sensibilidad</h2>
+  <div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-file-earmark-pdf"></i> Generar informe acumulado de sensibilidad</h2>
     <form id="form-informe" method="post" class="mt-4">
       {% csrf_token %}
-      <div class="mb-3">
-        {{ form.microorganismo.label_tag }}<br>
-        {{ form.microorganismo }}
-        {% if form.microorganismo.errors %}
-          <div class="text-danger">{{ form.microorganismo.errors }}</div>
-        {% endif %}
-      </div>
+        <div class="card p-4 mb-4">
+            <h5 class="section-title mb-3"><i class="bi bi-bug"></i> Microorganismo</h5>
+            <div class="mb-3">
+                <label for="id_microorganismo" class="form-label fw-semibold">Microorganismo</label>
+                {{ form.microorganismo }}
+                {% if form.microorganismo.errors %}
+                  <div class="text-danger">{{ form.microorganismo.errors }}</div>
+                {% endif %}
+              </div>
+        </div>
+       <div class="card p-4 mb-4">
+            <h5 class="section-title mb-3"><i class="bi bi-list-ul"></i> Filtros</h5>
+            <div class="mb-3">
+                <label for="id_fecha_inicial" class="form-label fw-semibold">Fecha inicial</label>
+                {{ form.fecha_inicial }}
+                {% if form.fecha_inicial.errors %}
+                  <div class="text-danger">{{ form.fecha_inicial.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                <label for="id_fecha_final" class="form-label fw-semibold">Fecha final</label>
+                {{ form.fecha_final }}
+                {% if form.fecha_final.errors %}
+                  <div class="text-danger">{{ form.fecha_final.errors }}</div>
+                {% endif %}
+            </div>
 
-      <div class="mb-3">
-        {{ form.fecha_inicial.label_tag }}<br>
-        {{ form.fecha_inicial }}
-        {% if form.fecha_inicial.errors %}
-          <div class="text-danger">{{ form.fecha_inicial.errors }}</div>
-        {% endif %}
-      </div>
-        <div class="mb-3">
-        {{ form.fecha_final.label_tag }}<br>
-        {{ form.fecha_final }}
-        {% if form.fecha_final.errors %}
-          <div class="text-danger">{{ form.fecha_final.errors }}</div>
-        {% endif %}
-      </div>
+           <div class="form-check mb-4">
+                {{ form.considerar_variantes }}
+                <label for="id_considerar_variantes" class="form-label fw-semibold">Considerar sólo variantes</label>
+           </div>
+          <div class="form-check mb-4">
+            {{ form.unificar_sei_con_sensibles }}
+            <label for="id_unificar_sei_con_sensibles" class="form-label fw-semibold">Unificar SEI con S</label>
+          </div>
+            <div class="form-check mb-4">
+            {{ form.comparar_con_periodo_anterior }}
+            <label for="id_comparar_con_periodo_anterior" class="form-label fw-semibold">Comparar con el periodo anterior (mostrar tendencias)</label>
+          </div>
 
-      <div class="form-check mb-4">
-        {{ form.considerar_variantes }}
-        {{ form.considerar_variantes.label_tag }}
-      </div>
+          <div class="mb-3">
+              <label for="{{ form.servicio.id_for_label }}" class="form-label fw-semibold">Servicio</label>
+              {{ form.servicio }}
+          </div>
 
-      <div class="form-check mb-4">
-        {{ form.unificar_sei_con_sensibles }}
-        {{ form.unificar_sei_con_sensibles.label_tag }}
-      </div>
-        <div class="form-check mb-4">
-        {{ form.comparar_con_periodo_anterior }}
-        {{ form.comparar_con_periodo_anterior.label_tag }}
-      </div>
-
-      <div class="mb-3">
-          <label for="{{ form.servicio.id_for_label }}">Servicio:</label>
-          {{ form.servicio }}
-      </div>
-
-      <div class="mb-3">
-          <label for="{{ form.categoria_muestra.id_for_label }}">Tipo de muestra:</label>
-          {{ form.categoria_muestra }}
-      </div>
-
-      <button type="submit" class="btn btn-primary">Generar informe PDF</button>
+          <div class="mb-3">
+              <label for="{{ form.categoria_muestra.id_for_label }}" class="form-label fw-semibold">Tipo de muestra</label>
+              {{ form.categoria_muestra }}
+          </div>
+           <div class="col-12 text-right">
+               <button type="submit" class="btn btn-primary"><i class="bi bi-cloud-download"></i> Generar informe PDF</button>
+           </div>
     </form>
   </div>
 {% endblock %}
 
 {% block extra_footer %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 
 // Intercepta el envío del formulario
@@ -71,7 +104,7 @@ $('#form-informe').on('submit', function (e) {
     // Crea el contenedor de mensajes si no existe
     if ($mensajes.length === 0) {
         $mensajes = $('<div class="messages-container"></div>');
-        $form.before($mensajes);
+        $form.after($mensajes);
     }
 
     // Limpia errores anteriores
@@ -81,7 +114,9 @@ $('#form-informe').on('submit', function (e) {
     // Mostrar spinner
     $mensajes.html('<div class="alert alert-info"><span class="spinner-border spinner-border-sm me-2"></span>Generando informe...</div>');
 
-    // ÚNICA PETICIÓN usando XMLHttpRequest con responseType blob
+    // petición usando XMLHttpRequest con responseType blob
+    // ref: https://stackoverflow.com/questions/8022425/getting-blob-data-from-xhr-request
+    // ref: https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest#setRequestHeader
     var xhr = new XMLHttpRequest();
     xhr.open('POST', $form.attr('action') || window.location.href, true);
     xhr.responseType = 'blob';
@@ -90,7 +125,7 @@ $('#form-informe').on('submit', function (e) {
     xhr.onload = function() {
         var contentType = xhr.getResponseHeader('Content-Type');
 
-        // CASO 1: Respuesta es JSON (errores de validación)
+        // CASO 1: La respuesta es JSON -> son entonces errores de validación
         if (contentType && contentType.includes('application/json')) {
             var reader = new FileReader();
             reader.onload = function() {
@@ -105,16 +140,17 @@ $('#form-informe').on('submit', function (e) {
             };
             reader.readAsText(xhr.response);
         }
-        // CASO 2: Respuesta es PDF (éxito)
+        // CASO 2: La respuesta es PDF -> éxito, no hay errores
         else if (contentType && contentType.includes('application/pdf')) {
             descargarPDF(xhr);
         }
-        // CASO 3: Otro tipo de contenido
+        // CASO 3: hipotético, otro tipo de contenido no esperado
         else {
             $mensajes.html('<div class="alert alert-error alert-dismissible fade show"><i class="bi bi-shield-x me-2"></i>Respuesta inesperada del servidor.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div>');
         }
     };
 
+    // Si hay error en la respuesta, mostramos un mensaje
     xhr.onerror = function() {
         $mensajes.html('<div class="alert alert-error alert-dismissible fade show"><i class="bi bi-shield-x me-2"></i>Error al generar el informe. Inténtalo de nuevo.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div>');
     };
@@ -153,6 +189,7 @@ $('#form-informe').on('submit', function (e) {
         // Extraer nombre del archivo
         var filename = 'informe.pdf';
         var disposition = xhr.getResponseHeader('Content-Disposition');
+
         if (disposition) {
         // ref: https://stackoverflow.com/questions/40939380/how-to-get-file-name-from-content-disposition
             var match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -174,7 +211,7 @@ $('#form-informe').on('submit', function (e) {
         // Mensaje de éxito
         $mensajes.html('<div class="alert alert-exito alert-dismissible fade show"><i class="bi bi-check-circle me-2"></i>Informe generado con éxito.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div>');
 
-        setTimeout(function() { $mensajes.find('.alert').fadeOut(); }, 5000);
+        setTimeout(function() { $mensajes.find('.alert').fadeOut(); }, 5000); // 5 segundos para cerrar el mensaje
     }
 });
 </script>

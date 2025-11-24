@@ -5,7 +5,6 @@
 
 {% block extra_head %}
 <!-- iconos bootstrap y estilos para Select2 -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
 <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
       rel="stylesheet"/>
@@ -28,6 +27,10 @@
       line-height: inherit;
       padding: 0.5rem 1rem;
     }
+
+     .bg-light {
+        --bs-bg-opacity: 0;
+    }
 </style>
 {% endblock %}
 
@@ -35,7 +38,7 @@
 
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-light d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Explorador de resistencias</h5>
+        <h5 class="mb-0" style="color: #0d6efd;"><i class="bi bi-compass"></i> Explorador de resistencias</h5>
         <a href="{% url 'Informes:informe_dinamico' %}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-clockwise"></i> Resetear
         </a>
@@ -152,82 +155,83 @@
 {% if tabla %}
 <div class="card shadow-sm mt-4">
     <div class="card-header bg-light">
-        <h5 class="mb-0">Resultados del mapa</h5>
+        <h5 class="mb-0" style="color: #0d6efd;"><i class="bi bi-radar"></i> Resultados del mapa de resistencias</h5>
     </div>
     <div class="card-body">
-        <table class="table table-bordered table-hover align-middle">
-            <thead class="table-light">
-            <tr>
-                <th>Antibiótico</th>
-                {% if unificar_sei_con_sensibles %}
-                    <!-- Modo S+I: 3 columnas -->
-                    <th>Sensibles / Total</th>
-                    <th>% Sensibilidad (IC 95%)</th>
-                {% else %}
-                    <!-- Modo S separado: 6 columnas -->
-                    <th>S / Total</th>
-                    <th>% Sensibilidad (S)</th>
-                    <th>I / Total</th>
-                    <th>% I (IC 95%)</th>
-                    <th>% S+I (IC 95%)</th>
-                {% endif %}
-            </tr>
-            </thead>
-            <tbody>
-            {% for fila in tabla %}
-            <tr>
-                <td><strong>{{ fila.antibiotico__antibiotico__nombre }}</strong></td>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                <tr>
+                    <th>Antibiótico</th>
+                    {% if unificar_sei_con_sensibles %}
+                        <!-- Modo S+I: 3 columnas -->
+                        <th>Sensibles / Total</th>
+                        <th>% Sensibilidad (IC 95%)</th>
+                    {% else %}
+                        <!-- Modo S separado: 6 columnas -->
+                        <th>S / Total</th>
+                        <th>% Sensibilidad (S)</th>
+                        <th>I / Total</th>
+                        <th>% I (IC 95%)</th>
+                        <th>% S+I (IC 95%)</th>
+                    {% endif %}
+                </tr>
+                </thead>
+                <tbody>
+                {% for fila in tabla %}
+                <tr>
+                    <td><strong>{{ fila.antibiotico__antibiotico__nombre }}</strong></td>
 
-                {% if unificar_sei_con_sensibles %}
-                    <!-- Modo S+I -->
-                    <td>{{ fila.sensibles }} / {{ fila.total }}</td>
-                    <td class="{% if fila.porcentaje_s >= 85 %}table-success
-                           {% elif fila.porcentaje_s >= 50 %}table-warning
-                           {% else %}table-danger{% endif %}">
-                        {{ fila.porcentaje_s }}%
-                        {% if fila.total >= 30 %}
-                            ({{ fila.ic_low }}–{{ fila.ic_high }})
-                        {% else %}
-                            <small>*</small>
-                        {% endif %}
-                    </td>
-
-                {% else %}
-                    <!-- Modo S separado -->
-                    <td>{{ fila.sensibles }} / {{ fila.total }}</td>
-                    <td>{{ fila.porcentaje_s }}%</td>
-
-                    <td>{{ fila.sei|default:0 }} / {{ fila.total }}</td>
-                    <td>
-                        {% if fila.porcentaje_i %}
-                            {{ fila.porcentaje_i }}%
-                            {% if fila.total >= 30 and fila.sei > 0 %}
-                                {% if fila.ic_low_i %}
-                                    <small>({{ fila.ic_low_i }}–{{ fila.ic_high_i }})</small>
-                                {% endif %}
+                    {% if unificar_sei_con_sensibles %}
+                        <!-- Modo S+I -->
+                        <td>{{ fila.sensibles }} / {{ fila.total }}</td>
+                        <td class="{% if fila.porcentaje_s >= 85 %}table-success
+                               {% elif fila.porcentaje_s >= 50 %}table-warning
+                               {% else %}table-danger{% endif %}">
+                            {{ fila.porcentaje_s }}%
+                            {% if fila.total >= 30 %}
+                                ({{ fila.ic_low }}–{{ fila.ic_high }})
+                            {% else %}
+                                <small>*</small>
                             {% endif %}
-                        {% else %}
-                            <span class="text-muted">–</span>
-                        {% endif %}
-                    </td>
+                        </td>
 
-                    <td class="{% if fila.porcentaje_si >= 85 %}table-success
-                           {% elif fila.porcentaje_si >= 50 %}table-warning
-                           {% else %}table-danger{% endif %}">
-                        {{ fila.porcentaje_si }}%
-                        {% if fila.total >= 30 %}
-                            ({{ fila.ic_low_si }}–{{ fila.ic_high_si }})
-                        {% else %}
-                            <small>*</small>
-                        {% endif %}
-                    </td>
+                    {% else %}
+                        <!-- Modo S separado -->
+                        <td>{{ fila.sensibles }} / {{ fila.total }}</td>
+                        <td>{{ fila.porcentaje_s }}%</td>
 
-                {% endif %}
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+                        <td>{{ fila.sei|default:0 }} / {{ fila.total }}</td>
+                        <td>
+                            {% if fila.porcentaje_i %}
+                                {{ fila.porcentaje_i }}%
+                                {% if fila.total >= 30 and fila.sei > 0 %}
+                                    {% if fila.ic_low_i %}
+                                        <small>({{ fila.ic_low_i }}–{{ fila.ic_high_i }})</small>
+                                    {% endif %}
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">–</span>
+                            {% endif %}
+                        </td>
 
+                        <td class="{% if fila.porcentaje_si >= 85 %}table-success
+                               {% elif fila.porcentaje_si >= 50 %}table-warning
+                               {% else %}table-danger{% endif %}">
+                            {{ fila.porcentaje_si }}%
+                            {% if fila.total >= 30 %}
+                                ({{ fila.ic_low_si }}–{{ fila.ic_high_si }})
+                            {% else %}
+                                <small>*</small>
+                            {% endif %}
+                        </td>
+
+                    {% endif %}
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
         <div>
               Aislados totales:  <strong>{{total}}</strong>
         </div>
@@ -248,7 +252,7 @@
 {% if resumen_mecanismos %}
 <div class="card shadow-sm mt-4">
     <div class="card-header bg-light">
-        <h5 class="mb-0">Mecanismos de resistencia</h5>
+        <h5 class="mb-0" style="color: #0d6efd;"><i class="bi bi-crosshair"></i> Mecanismos de resistencia</h5>
     </div>
     <div class="card-body">
         <ul class="mb-0">
@@ -321,16 +325,15 @@
 {% endblock %}
 
 {% block extra_footer %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     // basado en https://www.geeksforgeeks.org/bootstrap/bootstrap-5-range-steps/
     // para su inicialización en 2 range, por jquery
-       $(function () {
+    $(function () {
         const $form = $("#filtro-form"); // formulario de filtros
         let submitTimeout;
 
-        function delayedSubmit() {
+        function delayedSubmit() { // retraso en el envío
             clearTimeout(submitTimeout);
             submitTimeout = setTimeout(() => {
                 if ($('#id_microorganismo').val()) { // disparar sólo si microorganismo tiene ya valor
@@ -339,7 +342,7 @@
             }, 1200); // 1.2s de espera
         }
 
-        // Inicializar sliders
+        // Inicializar ranges de edades
         function initRange(id, valId) {
             const $range = $("#" + id);
             const $label = $("#" + valId);
@@ -354,8 +357,8 @@
         initRange("id_edad_min_slider", "edad_min_val");
         initRange("id_edad_max_slider", "edad_max_val");
 
-        // Inicializar Select2
-        $("select").select2({
+        // Inicializar Select2 genérico
+        $("select").not("#id_microorganismo, #id_antibiotico, #id_mec_resistencia, #id_sub_mec_resistencia, #id_version_eucast, #id_agrupacion").select2({
             theme: 'bootstrap-5',
             placeholder: 'Selecciona opciones...',
             allowClear: true,
@@ -364,20 +367,96 @@
                 searching: () => '🔍 Buscando...',
                 noResults: () => '❌ No se encontraron resultados'
             }
-        });
+        }).on('select2:open', function(e) { // buscador interno
+            const container = $(e.target).data('select2').$dropdown;
+            const searchField = container.find('.select2-search__field');
+            if (searchField.length) {
+                searchField.attr('placeholder', '🔍 Escribe para filtrar opciones...');
+            }
+        }).on('change', delayedSubmit); // retrasar el envío del formulario, son gráficos dinámicos
 
+        // Select2 para MICROORGANISMO
         $('#id_microorganismo').select2({
             theme: 'bootstrap-5',
             placeholder: 'Selecciona un microorganismo...',
             allowClear: true,
             width: '100%',
-        }).on('select2:open', function() {
-            const searchField = document.querySelector('.select2-container--open .select2-search__field');
-            if (searchField) searchField.setAttribute('placeholder', '🔍 Escribe para filtrar microorganismos...');
+            language: {
+                searching: () => '🔍 Buscando...',
+                noResults: () => '❌ No se encontraron resultados'
+            }
+        }).on('select2:open', function(e) {
+            const container = $(e.target).data('select2').$dropdown;
+            const searchField = container.find('.select2-search__field');
+            if (searchField.length) {
+                searchField.attr('placeholder', '🔍 Escribe para filtrar microorganismos...');
+            }
         }).on('change', delayedSubmit);
 
-        // Otros selects y checkboxes
-        $("select").not("#id_microorganismo").on("change", delayedSubmit);
+        // Select2 para ANTIBIÓTICO
+        $('#id_antibiotico').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Selecciona un antibiótico...',
+            allowClear: true,
+            width: '100%',
+            language: {
+                searching: () => '🔍 Buscando...',
+                noResults: () => '❌ No se encontraron resultados'
+            }
+        }).on('select2:open', function(e) {
+            const container = $(e.target).data('select2').$dropdown;
+            const searchField = container.find('.select2-search__field');
+            if (searchField.length) {
+                searchField.attr('placeholder', '🔍 Escribe para filtrar antibióticos...');
+            }
+        }).on('change', delayedSubmit);
+
+        // Select2 para MECANISMO DE RESISTENCIA
+        $('#id_mec_resistencia').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Selecciona un mecanismo...',
+            allowClear: true,
+            width: '100%',
+            language: {
+                searching: () => '🔍 Buscando...',
+                noResults: () => '❌ No se encontraron resultados'
+            }
+        }).on('select2:open', function(e) {
+            const container = $(e.target).data('select2').$dropdown;
+            const searchField = container.find('.select2-search__field');
+            if (searchField.length) {
+                searchField.attr('placeholder', '🔍 Escribe para filtrar mecanismos...');
+            }
+        }).on('change', delayedSubmit);
+
+        // Select2 para SUBTIPO
+        $('#id_sub_mec_resistencia').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Selecciona un subtipo...',
+            allowClear: true,
+            width: '100%',
+            language: {
+                searching: () => '🔍 Buscando...',
+                noResults: () => '❌ No se encontraron resultados'
+            }
+        }).on('select2:open', function(e) {
+            const container = $(e.target).data('select2').$dropdown;
+            const searchField = container.find('.select2-search__field');
+            if (searchField.length) {
+                searchField.attr('placeholder', '🔍 Escribe para filtrar subtipos...');
+            }
+        }).on('change', delayedSubmit);
+
+        // Select2 para VERSIÓN EUCAST y AGRUPACIÓN (sin búsqueda)
+        $('#id_version_eucast, #id_agrupacion').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Selecciona una opción...',
+            allowClear: true,
+            width: '100%',
+            minimumResultsForSearch: -1 // Deshabilita la búsqueda
+        }).on('change', delayedSubmit);
+
+        // Checkboxes
         $('#id_unificar_sei_con_sensibles, #id_considerar_variantes').on("change", delayedSubmit);
 
         // Fechas
