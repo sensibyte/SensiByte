@@ -1,0 +1,1168 @@
+{% extends 'Base/base.html' %}
+{% load static %}
+
+{% block title %}Análisis de Tendencias con Regresión - {{ hospital.nombre }}{% endblock %}
+
+{% block extra_head %}
+<!-- iconos bootstrap y estilos para Select2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+      rel="stylesheet"/>
+<style>
+    /* El prepend no se alinea bien con el select2 si no es con estos estilos, la idea en stackoverflow */
+    /* https://stackoverflow.com/questions/56707134/select2-with-bootstrap-theme-not-honoring-input-group-class */
+    .input-group > .select2-container--bootstrap-5 {
+      width: auto !important;
+      flex: 1 1 auto;
+    }
+
+    .input-group > .select2-container--bootstrap-5 .select2-selection--single {
+      height: 100%;
+      line-height: inherit;
+      padding: 0.5rem 1rem;
+    }
+
+     .bg-light {
+        --bs-bg-opacity: 0;
+    }
+
+    .badge-success { background-color: #198754; }
+    .badge-warning { background-color: #ffc107; color: #000; }
+    .badge-danger { background-color: #dc3545; }
+    .badge-info { background-color: #17a2b8; }
+    .card-tendencias { margin-bottom: 1.5rem; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }
+    .card-header-tendencias { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: 600; }
+    .stat-card { border-left: 4px solid; margin-bottom: 1rem; }
+    .stat-card.sensible { border-color: #4bc0c0; }
+    .stat-card.intermedio { border-color: #ffce56; }
+    .stat-card.resistente { border-color: #ff6384; }
+    .modelo-card { border: 2px solid #e0e0e0; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; transition: all 0.3s ease; }
+    .modelo-card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-color: #667eea; }
+    .modelo-card.lineal { background: linear-gradient(to bottom, #fff 0%, #fee2e2 100%); border-color: #dc2626; }
+    .modelo-card.gam { background: linear-gradient(to bottom, #fff 0%, #ede9fe 100%); border-color: #7c3aed; }
+    .r2-badge { font-size: 1.2rem; padding: 0.5rem 1rem; background-color: #3b82f6; color: white; }
+    .rmse-badge { font-size: 1.2rem; padding: 0.5rem 1rem; background-color: #f59e0b; color: white; }
+    .prediccion-badge { font-size: 1.5rem; padding: 0.75rem 1.5rem; font-weight: bold; }
+    .grafico-container { background: white; padding: 1rem; border-radius: 8px; margin-top: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .grafico-container img { max-width: 100%; height: auto; border-radius: 4px; }
+    .tendencia-ascendente { color: #16a34a; font-weight: bold; }
+    .tendencia-descendente { color: #dc3545; font-weight: bold; }
+    .tendencia-estable { color: #ffc107; font-weight: bold; }
+    .tendencia-mec-ascendente { color: #dc3545; font-weight: bold; }
+    .tendencia-mec-descendente { color: #16a34a; font-weight: bold; }
+    .alerta-copiados { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; margin-bottom: 1rem; }
+    .comparacion-modelos { background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-top: 2rem; margin-bottom: 2rem; }
+    .alert-error { background-color: #fee; border-left: 4px solid #dc2626; padding: 1rem; margin-bottom: 1rem; color: #991b1b; }
+    .cv-metric { background-color: #e0f2fe; padding: 0.25rem 0.5rem; border-radius: 4px; font-weight: 600; }
+
+    /* Evitar desbordamiento en alertas */
+    .alert-warning ul, .alert-info ul {
+        padding-left: 1.2rem;
+        margin-bottom: 0;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .alert-warning li, .alert-info li {
+        margin-bottom: 0.25rem;
+    }
+
+    /* Para la pantalla de espera de carga */
+    #loading-overlay {
+      position: fixed; /* no permite scroll */
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%; /* ocupa toda la pantalla */
+      background: rgba(255,255,255,0.95); /* fondo prácticamente opaco */
+      z-index: 9999; /* por encima de cualquier elemento */
+      display: flex;
+      justify-content: center;
+      align-items: center; /* centrado */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4"><i class="bi bi-graph-up-arrow"></i> Análisis de Tendencias con Regresión</h1>
+            <p class="text-muted">Análisis estadístico avanzado con modelos de Regresión Lineal y GAM con splines para predecir tendencias futuras.</p>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+   <div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0" style="color: #0d6efd;"><i class="bi bi-funnel"></i> Parámetros de Análisis</h5>
+                <a href="{% url 'Tendencias:analisis_tendencias' %}" class="btn btn-outline-secondary btn-sm">
+                  <i class="bi bi-arrow-clockwise"></i> Resetear
+                </a>
+            </div>
+            <div class="card-body">
+                <form method="post" id="form-tendencias">
+                    {% csrf_token %}
+
+                    <!-- Fechas, EUCAST y Agrupación -->
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="id_fecha_inicio">Fecha de inicio</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+                                        <input type="date" name="fecha_inicio" id="id_fecha_inicio" class="form-control" value="{{ fecha_inicio|date:'Y-m-d' }}" required>
+                                </div>
+                            </div>
+                        <div class="col-md-3">
+                            <label for="id_fecha_fin">Fecha de fin</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-calendar-check"></i></span>
+                                <input type="date" name="fecha_fin" id="id_fecha_fin" class="form-control" value="{{ fecha_fin|date:'Y-m-d' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="id_version_eucast">Versión EUCAST</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-rulers"></i></span>
+                                <select name="version_eucast" id="id_version_eucast" class="form-control" required>
+                                    <option value="">--- Seleccionar ---</option>
+                                    {% for version in versiones_eucast %}
+                                    <option value="{{ version.id }}"
+                                            {% if version_eucast_selected|stringformat:"s" == version.id|stringformat:"s" %}selected{% endif %}> {{ version }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="id_agrupacion">Agrupación</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-calendar-range"></i></span>
+                                <select name="agrupacion" id="id_agrupacion" class="form-control" required>
+                                    <option value="trimestre" {% if agrupacion == 'trimestre' %}selected{% endif %}>Trimestre</option>
+                                    <option value="semestre" {% if agrupacion == 'semestre' %}selected{% endif %}>Semestre</option>
+                                    <option value="anyo" {% if agrupacion == 'anyo' %}selected{% endif %}>Año</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rango de Edad -->
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="id_edad_min">Edad mínima: <span id="edad_min_val">{{ edad_min.value|default:0 }}</span></label>
+                            <input type="range" id="id_edad_min" name="edad_min" min="0" max="120"
+                                value="{{ edad_min.value|default:'0' }}" class="form-range">
+                            <small class="form-text text-muted">Edad mínima del paciente (0-120 años)</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_edad_max">Edad máxima: <span id="edad_max_val">{{ edad_max.value|default:120 }}</span></label>
+                            <input type="range" id="id_edad_max" name="edad_max" min="0" max="120"
+                                value="{{ edad_min.value|default:'120' }}" class="form-range">
+                            <small class="form-text text-muted">Edad máxima del paciente (0-120 años)</small>
+                        </div>
+                    </div>
+
+                    <!-- Filtros select múltiples -->
+                    <div class="row mt-3">
+                        <div class="col-md-3">
+                            <label for="id_sexo">Sexo</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-gender-ambiguous"></i></span>
+                                <select name="sexo" id="id_sexo" class="form-select" multiple>
+                                    {% for s in sexos %}
+                                    <option value="{{ s.id }}" {% if s.id in sexo_selected %}selected{% endif %}>{{ s.sexo.descripcion }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="id_ambito">Ámbito</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-building"></i></span>
+                                <select name="ambito" id="id_ambito" class="form-select" multiple>
+                                    {% for a in ambitos %}
+                                    <option value="{{ a.id }}" {% if a.id in ambito_selected %}selected{% endif %}>{{ a.ambito.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="id_servicio">Servicio</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-hospital"></i></span>
+                                <select name="servicio" id="id_servicio" class="form-select" multiple>
+                                {% for s in servicios %}
+                                <option value="{{ s.id }}" {% if s.id in servicio_selected %}selected{% endif %}>{{ s.servicio.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="id_tipo_muestra">Categoría de muestra</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-droplet"></i></span>
+                                <select name="tipo_muestra" id="id_tipo_muestra" class="form-select" multiple>
+                                    {% for t in tipos_muestra %}
+                                    <option value="{{ t.id }}" {% if t.id in tipo_muestra_selected %}selected{% endif %}>{{ t.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Microorganismo, Antibiótico, Mecanismo y Subtipo -->
+                    <div class="row mt-3">
+                        <div class="col-md-3">
+                            <label for="id_microorganismo">Microorganismo</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-bug"></i></span>
+                                <select name="microorganismo" id="id_microorganismo" class="form-control" required>
+                                    <option value="">--- Seleccionar ---</option>
+                                    {% for micro in microorganismos %}
+                                    <option value="{{ micro.id }}" {% if microorganismo_selected|stringformat:"s" == micro.id|stringformat:"s" %}
+                                                                                selected{% endif %}>{{ micro.microorganismo.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="id_antibiotico">Antibiótico</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-capsule"></i></span>
+                                <select id="id_antibiotico" name="antibiotico" class="form-control">
+                                    <option value="">--- Seleccionar ---</option>
+                                    {% for antibio in antibioticos %}
+                                        <option value="{{ antibio.id }}"
+                                                {% if antibio.id|stringformat:"s" == antibiotico_selected %}selected{% endif %}>
+                                            {{ antibio.antibiotico.nombre }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                        </div>
+                        <div class="col-md-3">
+                            <label for="id_mec_resistencia">Mecanismo de Resistencia</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-diagram-3"></i></span>
+                                <select id="id_mec_resistencia" name="mec_resistencia" class="form-control">
+                                <option value="">--- Seleccionar ---</option>
+                                {% for mec in mecanismos %}
+                                    <option value="{{ mec.id }}"
+                                            {% if mec.id|stringformat:"s" == mec_resistencia_selected %}selected{% endif %}>
+                                        {{ mec.mecanismo.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="id_sub_mec_resistencia">Subtipo</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-node-minus"></i></span>
+                                <select id="id_sub_mec_resistencia" name="sub_mec_resistencia" class="form-control">
+                                <option value="">--- Seleccionar ---</option>
+                                {% for sub in subtipos %}
+                                    <option value="{{ sub.id }}"
+                                            {% if sub.id|stringformat:"s" == sub_mec_resistencia_selected %}selected{% endif %}>
+                                        {{ sub.subtipo_mecanismo.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botón de análisis -->
+                    <div class="row mt-4">
+                        <div class="col-12 text-right">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-lightning-charge"></i> Analizar con Regresión
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+    {% if mostrar_resultados %}
+        {% if datos_tendencia|length < 10 %}
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="alert alert-warning">
+                    <h6><i class="bi bi-exclamation-triangle"></i> <strong>Advertencia: Pocas observaciones ({{ datos_tendencia|length }} períodos)</strong></h6>
+                    <p>Con menos de 10 períodos temporales:</p>
+                    <ul class="mb-0">
+                        <li>Las métricas de <strong>validación cruzada tienen alta variabilidad</strong> (pocos folds disponibles)</li>
+                        <li>Los <strong>p-valores son poco fiables</strong> (muestra pequeña reduce poder estadístico)</li>
+                        <li><strong>Los intervalos de predicción serían muy amplios</strong> (alta incertidumbre)</li>
+                        <li>💡 <strong>Recomendación:</strong> Interpretar los resultados con <u>mucha cautela</u>. Considerar ampliar el rango de fechas o agrupación para obtener más períodos.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        <!-- Avisos -->
+        {% if avisos.total_copiados > 0 %}
+        <div class="row">
+            <div class="col-12">
+                <div class="alerta-copiados">
+                    <h5><i class="bi bi-exclamation-triangle"></i> Atención: Datos Copiados</h5>
+                    <p>Se encontraron <strong>{{ avisos.total_copiados }}</strong> registros copiados sin reinterpretación real.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Estadísticas globales -->
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <div class="card stat-card sensible">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted">Sensible</h5>
+                        <h2 class="mb-0">{{ estadisticas_globales.porcentaje_S }}%</h2>
+                        <p class="text-muted mb-0">{{ estadisticas_globales.total_S }} / {{ estadisticas_globales.total_general }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card intermedio">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted">Intermedio</h5>
+                        <h2 class="mb-0">{{ estadisticas_globales.porcentaje_I }}%</h2>
+                        <p class="text-muted mb-0">{{ estadisticas_globales.total_I }} / {{ estadisticas_globales.total_general }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card resistente">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted">Resistente</h5>
+                        <h2 class="mb-0">{{ estadisticas_globales.porcentaje_R }}%</h2>
+                        <p class="text-muted mb-0">{{ estadisticas_globales.total_R }} / {{ estadisticas_globales.total_general }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla comparativa -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="comparacion-modelos">
+                    <h4 class="mb-3"><i class="bi bi-trophy"></i> Comparación de Modelos</h4>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th rowspan="2" class="align-middle">Modelo</th>
+                                    <th colspan="3" class="text-center" style="background-color: #dcfce7; border-bottom: 2px solid #16a34a;">
+                                        <strong>🎯 MÉTRICAS (Out-of-Sample)</strong><br>
+                                        <small class="text-muted">Selección de modelo</small>
+                                    </th>
+                                    <th rowspan="2" class="align-middle text-center" style="background-color: #fefce8; border-bottom: 2px solid #d3c544;">
+                                        <div style="display: block;">*R²</div>
+                                    </th>
+
+                                    <th rowspan="2" class="align-middle text-center">Diagnósticos</th>
+                                    <th rowspan="2" class="align-middle text-center">Predicción<br>Siguiente</th>
+                                </tr>
+                                <tr>
+                                    <th class="text-center" style="background-color: #f0fdf4;">⭐ CV MAE</th>
+                                    <th class="text-center" style="background-color: #f0fdf4;">⭐ CV RMSE</th>
+                                    <th class="text-center" style="background-color: #f0fdf4;">⭐ CV SMAPE</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for res in resultados_lista %}
+                                    {% if not res.error %}
+                                    <tr>
+                                        <td><strong>{{ res.nombre }}</strong></td>
+
+                                        <!-- CV MAE -->
+                                        <td class="text-center" style="background-color: #f0fdf4;">
+                                            {% if res.cv_mae != 'N/A' %}
+                                                <strong style="font-size: 1.1em; color: #16a34a;">{{ res.cv_mae }}%</strong> ± {{ res.cv_mae_std }}%
+                                                <br><small class="text-muted">({{ res.cv_num_folds }} folds)</small>
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- CV RMSE -->
+                                        <td class="text-center" style="background-color: #f0fdf4;">
+                                            {% if res.cv_rmse != 'N/A' %}
+                                                <strong style="font-size: 1.1em; color: #16a34a;">{{ res.cv_rmse }}</strong> ± {{ res.cv_rmse_std }}
+                                                <br><small class="text-muted">({{ res.cv_num_folds }} folds)</small>
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- CV SMAPE -->
+                                        <td class="text-center" style="background-color: #f0fdf4;">
+                                            {% if res.cv_smape != 'N/A' %}
+                                                <strong style="font-size: 1.1em; color: #16a34a;">{{ res.cv_smape }}%</strong> ± {{ res.cv_smape_std }}%
+                                                <br><small class="text-muted">({{ res.cv_num_folds }} folds)</small>
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- R / Pseudo-R² -->
+                                        <td class="text-center" style="background-color: #fefce8;">
+                                            {% if res.nombre == 'Lineal' %}
+                                                {{ res.r2 }}
+                                            {% elif res.nombre == 'Gam' %}
+                                                {{ res.diagnosticos.pseudo_r2 }}
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- Diagnósticos -->
+                                        <td class="text-center">
+                                            {% if res.nombre == 'Gam' %}
+                                                {% if res.diagnosticos %}
+                                                    <div>
+                                                        <strong>p <small>(término suavizado)</small>=</strong>{{ res.p_valor }}
+                                                        {% if res.p_valor < 0.05 %}
+                                                            <span class="badge badge-success">Sig.</span>
+                                                        {% else %}
+                                                            <span class="badge badge-warning">No sig.</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    <button type="button" class="btn btn-sm btn-info" data-toggle="modal" data-target="#modalDiagnosticosGAM">
+                                                        <i class="bi bi-clipboard2-pulse"></i> Detalle
+                                                    </button>
+                                                {% else %}
+                                                    <span class="text-muted">—</span>
+                                                {% endif %}
+                                            {% elif res.nombre == 'Lineal' %}
+                                                <div>
+                                                    <strong>p <small>(pendiente)</small>=</strong>{{ res.p_valor }}
+                                                    {% if res.p_valor < 0.05 %}
+                                                        <span class="badge badge-success">Sig.</span>
+                                                    {% else %}
+                                                        <span class="badge badge-warning">No sig.</span>
+                                                    {% endif %}
+                                                </div>
+                                                {% if res.diagnosticos %}
+                                                    <button type="button" class="btn btn-sm btn-info mt-1" data-toggle="modal" data-target="#modalDiagnosticosLineal">
+                                                        <i class="bi bi-clipboard2-pulse"></i> Detalle
+                                                    </button>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- Predicción -->
+                                        <td class="text-center">
+                                            <strong style="font-size: 1.2em;">{{ res.pred_siguiente }}%</strong>
+                                            {% if res.tendencia == 'ascendente' %}
+                                                 <span class="tendencia-ascendente"><i class="bi bi-arrow-up"></i></span>
+                                            {% elif res.tendencia == 'descendente' %}
+                                                 <span class="tendencia-descendente"><i class="bi bi-arrow-down"></i></span>
+                                            {% elif res.tendencia == 'estable (no significativa)' %}
+                                                 <span class="tendencia-estable"><i class="bi bi-dash-lg"></i></span>
+                                            {% endif %}
+                                            <br>({{ res.pred_lower}}-{{res.pred_upper}})
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="alert alert-info mt-3">
+                        <h6><i class="bi bi-info-circle"></i> <strong>Nota sobre R² / Pseudo-R² (*):</strong></h6>
+                        <p>R² para modelos lineales, Pseudo-R² para GAM (aproximación de devianza explicada). No son estrictamente comparables entre familias de modelos, pero permiten ver el ajuste histórico.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Gráficos -->
+        {% for res in resultados_lista %}
+            {% if not res.error and res.grafico %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="modelo-card {{ res.nombre|lower }}">
+                        <div class="row align-items-center mb-3">
+                            <div class="col-md-8">
+                                <h3>
+                                    {% if res.nombre == 'Lineal' %}<i class="bi bi-graph-up"></i> Regresión Lineal{% endif %}
+                                    {% if res.nombre == 'Gam' %}<i class="bi bi-diagram-2"></i> GAM (Generalized Additive Model){% endif %}
+                                </h3>
+                            </div>
+                            <div class="col-md-4 text-right">
+                                {% if res.r2 != 'N/A' %}
+                                <span class="badge r2-badge">R²: {{ res.r2 }}</span><br>
+                                {% endif %}
+                                {% if res.cv_rmse != 'N/A' %}
+                                <span class="badge badge-info">CV RMSE: {{ res.cv_rmse }}±{{ res.cv_rmse_std }}</span><br>
+                                {% endif %}
+                                <small class="text-muted">Predicción:</small><br>
+                                <span class="badge badge-success prediccion-badge">{{ res.pred_siguiente }}%</span>
+                            </div>
+                        </div>
+                        <div class="grafico-container">
+                            <img src="data:image/png;base64,{{ res.grafico }}" alt="Gráfico {{ res.nombre }}" class="img-fluid">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% elif res.error %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="alert-error">
+                        <h5><i class="bi bi-exclamation-circle"></i> Error en {{ res.nombre }}</h5>
+                        <p>{{ res.error }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <!-- Modal Diagnósticos Lineal -->
+    <div class="modal fade" id="modalDiagnosticosLineal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white;">
+                    <h5 class="modal-title"><i class="bi bi-graph-up"></i> Diagnósticos Regresión Lineal</h5>
+                </div>
+                <div class="modal-body">
+                    {% for res in resultados_lista %}
+                        {% if res.nombre == 'Lineal' and not res.error and res.diagnosticos %}
+                            <h6>Información del Modelo</h6>
+                            <ul>
+                                <li><strong>Intercepto:</strong> {{ res.intercepto }}</li>
+                                <li><strong>Pendiente:</strong> {{ res.pendiente }}</li>
+                                <li><strong>R²:</strong> {{ res.r2 }}</li>
+                                <li><strong>F:</strong> {{ res.f_statistic }} (p = {{ res.p_valor_f }})</li>
+                                <li><strong>MAE:</strong> {{ res.mae }}%</li>
+                                <li><strong>RMSE:</strong> {{ res.rmse }}</li>
+                                <li><strong>Tendencia:</strong>
+                                    {% if modo_mecanismo %}
+                                        {% if res.tendencia == 'ascendente' %}
+                                        <span class="tendencia-mec-ascendente"><i class="bi bi-arrow-up"></i> Ascendente</span>
+                                        {% elif res.tendencia == 'descendente' %}
+                                            <span class="tendencia-mec-descendente"><i class="bi bi-arrow-down"></i> Descendente</span>
+                                        {% else %}
+                                            <span class="tendencia-estable"><i class="bi bi-dash-lg"></i> Estable</span>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if res.tendencia == 'ascendente' %}
+                                        <span class="tendencia-ascendente"><i class="bi bi-arrow-up"></i> Ascendente</span>
+                                        {% elif res.tendencia == 'descendente' %}
+                                            <span class="tendencia-descendente"><i class="bi bi-arrow-down"></i> Descendente</span>
+                                        {% else %}
+                                            <span class="tendencia-estable"><i class="bi bi-dash-lg"></i> Estable</span>
+                                        {% endif %}
+                                    {% endif %}
+
+                                </li>
+                            </ul>
+
+                            <h6 class="mt-3">Pruebas de Supuestos</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Prueba</th>
+                                            <th>Valor</th>
+                                            <th>Interpretación</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if res.diagnosticos.shapiro_p %}
+                                        <tr>
+                                            <td><strong>Shapiro-Wilk</strong><br><small>Normalidad (muestras pequeñas)</small></td>
+                                            <td>p={{ res.diagnosticos.shapiro_p }}<br>
+                                                <small>stat={{ res.diagnosticos.shapiro_stat }}</small>
+                                            </td>
+                                            <td>
+                                                {% if res.diagnosticos.shapiro_p > 0.05 %}
+                                                    <span class="badge badge-success">✓ Normal</span>
+                                                {% else %}
+                                                    <span class="badge badge-warning">⚠ No normal</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+
+                                        {% if res.diagnosticos.jarque_bera_p %}
+                                        <tr>
+                                            <td><strong>Jarque-Bera</strong><br><small>Normalidad residuos</small></td>
+                                            <td>p={{ res.diagnosticos.jarque_bera_p }}<br>
+                                                <small>stat={{ res.diagnosticos.jarque_bera_stat }}</small>
+                                            </td>
+                                            <td>
+                                                {% if res.diagnosticos.jarque_bera_p > 0.05 %}
+                                                    <span class="badge badge-success">✓ Normal</span>
+                                                {% else %}
+                                                    <span class="badge badge-warning">⚠ No normal</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+
+                                        {% if res.diagnosticos.breusch_pagan_p %}
+                                        <tr>
+                                            <td><strong>Breusch-Pagan</strong><br><small>Homocedasticidad</small></td>
+                                            <td>p={{ res.diagnosticos.breusch_pagan_p }}<br>
+                                                <small>stat={{ res.diagnosticos.breusch_pagan_stat }}</small>
+                                            </td>
+                                            <td>
+                                                {% if res.diagnosticos.breusch_pagan_p > 0.05 %}
+                                                    <span class="badge badge-success">✓ Homocedástico</span>
+                                                {% else %}
+                                                    <span class="badge badge-warning">⚠ Heterocedástico</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+
+                                        {% if res.diagnosticos.white_p %}
+                                        <tr>
+                                            <td><strong>White test</strong><br><small>Homocedasticidad robusta</small></td>
+                                            <td>p={{ res.diagnosticos.white_p }}<br>
+                                                <small>stat={{ res.diagnosticos.white_stat }}</small>
+                                            </td>
+                                            <td>
+                                                {% if res.diagnosticos.white_p > 0.05 %}
+                                                    <span class="badge badge-success">✓ Homocedástico</span>
+                                                {% else %}
+                                                    <span class="badge badge-warning">⚠ Heterocedástico</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+
+                                        {% if res.diagnosticos.durbin_watson %}
+                                        <tr>
+                                            <td><strong>Durbin-Watson</strong><br><small>Autocorrelación</small></td>
+                                            <td>DW={{ res.diagnosticos.durbin_watson }}</td>
+                                            <td>
+                                                {% if res.diagnosticos.durbin_watson >= 1.5 and res.diagnosticos.durbin_watson <= 2.5 %}
+                                                    <span class="badge badge-success">✓ Sin autocorr.</span>
+                                                {% else %}
+                                                    <span class="badge badge-warning">⚠ Autocorr. detectada</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+
+                                        {% if res.diagnosticos.ljung_box_p %}
+                                        <tr>
+                                            <td><strong>Ljung-Box</strong><br><small>Autocorrelación global</small></td>
+                                            <td>p={{ res.diagnosticos.ljung_box_p }}<br>
+                                                <small>stat={{ res.diagnosticos.ljung_box_stat }}</small>
+                                            </td>
+                                            <td>
+                                                {% if res.diagnosticos.ljung_box_p > 0.05 %}
+                                                    <span class="badge badge-success">✓ Sin autocorr.</span>
+                                                {% else %}
+                                                    <span class="badge badge-warning">⚠ Autocorr. detectada</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {% if res.diagnosticos.acf_plot %}
+                            <div class="grafico-container">
+                            <img src="data:image/png;base64,{{ res.diagnosticos.acf_plot }}" alt="Gráfico ACF residuos de {{ res.nombre }}" class="img-fluid">
+                            </div>
+                            {% endif %}
+
+                            <div class="alert alert-info mt-3">
+                                <h6><i class="bi bi-info-circle"></i> Interpretación:</h6>
+                                <ul class="mb-0">
+                                    <li><strong>Jarque-Bera / Shapiro-Wilk</strong>: p > 0.05 indica residuos normalmente distribuidos.</li>
+                                    <li><strong>Breusch-Pagan</strong>: p > 0.05 indica homocedasticidad (varianza constante de residuos).</li>
+                                    <li><strong>White test</strong>: p > 0.05 indica homocedasticidad robusta (varianza constante de residuos).</li>
+                                    <li><strong>Durbin-Watson</strong>: ~2 indica no autocorrelación. <1.5 o >2.5 sugiere autocorrelación.</li>
+                                    <li><strong>Ljung–Box</strong>: p > 0.05 indica no autocorrelación global.</li>
+                                    <li><strong>Gráfico ACF de los residuos</strong>:
+                                        <ul>
+                                            <li>Cada barra muestra la autocorrelación de los residuos con su rezago correspondiente.</li>
+                                            <li>Si todas las barras están dentro de las bandas azules de confianza, se considera que no hay autocorrelación significativa.</li>
+                                            <li>Barras fuera de las bandas indican autocorrelación significativa en ese rezago.</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Diagnósticos GAM -->
+    <div class="modal fade" id="modalDiagnosticosGAM" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white;">
+                    <h5 class="modal-title"><i class="bi bi-diagram-2"></i> Diagnósticos GAM</h5>
+                </div>
+                <div class="modal-body">
+                    {% for res in resultados_lista %}
+                        {% if res.nombre == 'Gam' and not res.error and res.diagnosticos %}
+                            <h6>Configuración del Modelo</h6>
+                            <ul>
+                                <li><strong>Número de splines:</strong> {{ res.n_splines }}</li>
+                                <li><strong>Lambda óptimo:</strong> {{ res.lambda|floatformat:2 }}</li>
+                                <li><strong>Grados de libertad efectivos (EDOF):</strong> {{ res.edof }}</li>
+                                <li><strong>R²:</strong> {{ res.r2 }}</li>
+                                <li><strong>MAE:</strong> {{ res.mae }}%</li>
+                                <li><strong>RMSE:</strong> {{ res.rmse }}</li>
+                            </ul>
+
+                            <h6 class="mt-3">Tests sobre Residuos</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Prueba</th>
+                                            <th>Valor</th>
+                                            <th>Interpretación</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if res.diagnosticos.jarque_bera_p %}
+                                        <tr>
+                                            <td><strong>Jarque-Bera</strong><br><small>Normalidad residuos</small></td>
+                                            <td>
+                                                p={{ res.diagnosticos.jarque_bera_p }}<br>
+                                                <small>stat={{ res.diagnosticos.jarque_bera_stat }}</small>
+                                            </td>
+                                            <td>
+                                                {% if res.diagnosticos.jarque_bera_p > 0.05 %}
+                                                    <span class="badge badge-success">✓ Normal</span>
+                                                {% else %}
+                                                    <span class="badge badge-warning">⚠ No normal</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+
+                                        {% if res.diagnosticos.shapiro_p %}
+                                        <tr>
+                                            <td><strong>Shapiro-Wilk</strong><br><small>Normalidad (muestras pequeñas)</small></td>
+                                            <td>
+                                                p={{ res.diagnosticos.shapiro_p }}<br>
+                                                <small>stat={{ res.diagnosticos.shapiro_stat }}</small>
+                                            </td>
+                                            <td>
+                                                {% if res.diagnosticos.shapiro_p > 0.05 %}
+                                                    <span class="badge badge-success">✓ Normal</span>
+                                                {% else %}
+                                                    <span class="badge badge-warning">⚠ No normal</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+
+                                        {% if res.diagnosticos.white_p %}
+                                        <tr>
+                                            <td><strong>White test</strong><br><small>Homocedasticidad robusta</small></td>
+                                            <td>p={{ res.diagnosticos.white_p }}<br>
+                                                <small>stat={{ res.diagnosticos.white_stat }}</small>
+                                            </td>
+                                            <td>
+                                                {% if res.diagnosticos.white_p > 0.05 %}
+                                                    <span class="badge badge-success">✓ Homocedástico</span>
+                                                {% else %}
+                                                    <span class="badge badge-warning">⚠ Heterocedástico</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+
+                                        {% if res.diagnosticos.ljung_box_p %}
+                                        <tr>
+                                            <td><strong>Ljung-Box</strong><br><small>Autocorrelación global</small></td>
+                                            <td>p={{ res.diagnosticos.ljung_box_p }}<br>
+                                                <small>stat={{ res.diagnosticos.ljung_box_stat }}</small>
+                                            </td>
+                                            <td>
+                                                {% if res.diagnosticos.ljung_box_p > 0.05 %}
+                                                    <span class="badge badge-success">✓ Sin autocorr.</span>
+                                                {% else %}
+                                                    <span class="badge badge-warning">⚠ Autocorr. detectada</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+
+                                        {% if res.p_valor != 'N/A' %}
+                                        <tr>
+                                            <td><strong>P-valor término suavizado</strong><br><small>Significancia estadística</small></td>
+                                            <td>{{ res.p_valor }}</td>
+                                            <td>
+                                                {% if res.p_valor < 0.05 %}
+                                                    <span class="badge badge-success">✓ Significativo</span>
+                                                {% else %}
+                                                    <span class="badge badge-warning">⚠ No significativo</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {% if res.diagnosticos.acf_plot %}
+                            <div class="grafico-container">
+                            <img src="data:image/png;base64,{{ res.diagnosticos.acf_plot }}" alt="Gráfico ACF residuos de {{ res.nombre }}" class="img-fluid">
+                            </div>
+                            {% endif %}
+
+                            <div class="alert alert-info mt-3">
+                                <h6><i class="bi bi-info-circle"></i> Interpretación GAM:</h6>
+                                <ul class="mb-0">
+                                    <li><strong>Pseudo R²</strong>: Proporción de devianza explicada. Similar a R² pero para modelos GAM.</li>
+                                    <li><strong>EDOF</strong>: Grados de libertad efectivos. Mide la complejidad del modelo (más splines → mayor EDOF).</li>
+                                    <li><strong>Lambda</strong>: Parámetro de suavizado. Mayor lambda → curva más suave (menos flexible).</li>
+                                    <li><strong>Jarque-Bera / Shapiro-Wilk</strong>: p > 0.05 indica residuos normalmente distribuidos.</li>
+                                    <li><strong>White test</strong>: p > 0.05 indica homocedasticidad robusta (varianza constante de residuos).</li>
+                                    <li><strong>Ljung–Box</strong>: p > 0.05 indica no autocorrelación global.</li>
+                                    <li><strong>Gráfico ACF de los residuos</strong>:
+                                        <ul>
+                                            <li>Cada barra muestra la autocorrelación de los residuos con su rezago correspondiente.</li>
+                                            <li>Si todas las barras están dentro de las bandas azules de confianza, se considera que no hay autocorrelación significativa.</li>
+                                            <li>Barras fuera de las bandas indican autocorrelación significativa en ese rezago.</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- Overlay de carga -->
+<div id="loading-overlay"
+     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background-color:rgba(255,255,255,0.8); z-index:1050; text-align:center;">
+    <div class="d-flex flex-column justify-content-center align-items-center h-100">
+        <div class="spinner-border text-primary mb-3" style="width:4rem; height:4rem;" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <h5 class="text-primary">Procesando resultados, por favor espere...</h5>
+    </div>
+</div>
+
+</div>
+{% endblock %}
+
+{% block extra_footer %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Formulario
+    const $form = $("#form-tendencias");
+
+    // Inicializar tooltips
+    $('[data-toggle="tooltip"]').tooltip();
+
+    // Modales
+    $('.btn[data-toggle="modal"]').on('click', function() {
+        var target = $(this).data('target');
+        $(target).modal('show');
+    });
+
+    $('.modal .close, .modal .btn-secondary').on('click', function() {
+        $(this).closest('.modal').modal('hide');
+    });
+
+    // Inicializar ranges
+        function initRange(id, valId) {
+            const $range = $("#" + id);
+            const $label = $("#" + valId);
+
+            if ($range.length && $label.length) {
+                $label.text($range.val());
+                $range.on("input", function () { $label.text($(this).val()); });
+            }
+        }
+
+    initRange("id_edad_min", "edad_min_val");
+    initRange("id_edad_max", "edad_max_val");
+
+    // Función para cargar antibióticos
+    function cargarAntibioticos(micro_id, valorSeleccionado) {
+        if (!micro_id) {
+            $('#id_antibiotico').empty().append('<option value="">--- Seleccionar ---</option>');
+            return;
+        }
+
+        var url_antibio = "{% url 'Tendencias:get-antibioticos' %}";
+
+        $.getJSON(url_antibio, {microorganismo_id: micro_id})
+            // Respuesta exitosa
+            .done(function(data){
+                var $antibiotico = $('#id_antibiotico');
+                $antibiotico.empty().append('<option value="">--- Seleccionar ---</option>');
+                data.forEach(function(item){
+                    var selected = (valorSeleccionado && item.id == valorSeleccionado) ? 'selected' : '';
+                    $antibiotico.append('<option value="'+item.id+'" '+selected+'>'+item.nombre+'</option>');
+                });
+            })
+            // Respuesta errónea: error en la consola
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                console.error('Error al cargar antibióticos:', textStatus, errorThrown);
+                console.error('Respuesta:', jqXHR.responseText);
+                alert('Error al cargar antibióticos. Revisa la consola para más detalles.');
+            });
+    }
+
+    // Función para cargar mecanismos
+    function cargarMecanismos(micro_id, valorSeleccionado) {
+        if (!micro_id) {
+            $('#id_mec_resistencia').empty().append('<option value="">--- Seleccionar ---</option>');
+            $('#id_sub_mec_resistencia').empty().append('<option value="">--- Seleccionar ---</option>');
+            return;
+        }
+
+        var url_mec = "{% url 'Tendencias:get-mec-resistencia' %}";
+
+        $.getJSON(url_mec, {microorganismo_id: micro_id})
+            .done(function(data){
+                var $mec = $('#id_mec_resistencia');
+                $mec.empty().append('<option value="">--- Seleccionar ---</option>');
+                data.forEach(function(item){
+                    var selected = (valorSeleccionado && item.id == valorSeleccionado) ? 'selected' : '';
+                    $mec.append('<option value="'+item.id+'" '+selected+'>'+item.nombre+'</option>');
+                });
+
+                // Si hay un mecanismo seleccionado, cargar sus subtipos
+                if (valorSeleccionado) {
+                    var subMecSeleccionado = $('#id_sub_mec_resistencia').data('selected');
+                    cargarSubtipos(valorSeleccionado, subMecSeleccionado);
+                } else {
+                    // Vaciar subtipos
+                    $('#id_sub_mec_resistencia').empty().append('<option value="">--- Seleccionar ---</option>');
+                }
+            })
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                console.error('Error al cargar mecanismos:', textStatus, errorThrown);
+                console.error('Respuesta:', jqXHR.responseText);
+                alert('Error al cargar mecanismos. Revisa la consola para más detalles.');
+            });
+    }
+
+    // Función para cargar subtipos
+    function cargarSubtipos(mec_id, valorSeleccionado) {
+        if (!mec_id) {
+            $('#id_sub_mec_resistencia').empty().append('<option value="">--- Seleccionar ---</option>');
+            return;
+        }
+
+        var url_sub = "{% url 'Tendencias:get-sub-mec-resistencia' %}";
+
+        $.getJSON(url_sub, {mecanismo_id: mec_id})
+            .done(function(data){
+                var $sub = $('#id_sub_mec_resistencia');
+                $sub.empty().append('<option value="">--- Seleccionar ---</option>');
+                data.forEach(function(item){
+                    var selected = (valorSeleccionado && item.id == valorSeleccionado) ? 'selected' : '';
+                    $sub.append('<option value="'+item.id+'" '+selected+'>'+item.nombre+'</option>');
+                });
+            })
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                console.error('Error al cargar subtipos:', textStatus, errorThrown);
+                console.error('Respuesta:', jqXHR.responseText);
+                alert('Error al cargar subtipos. Revisa la consola para más detalles.');
+            });
+    }
+
+    // Cambio de microorganismo
+    $('#id_microorganismo').change(function() {
+        var micro_id = $(this).val();
+
+        // Limpiar campos dependientes primero
+        $('#id_antibiotico').empty().append('<option value="">--- Seleccionar ---</option>');
+        $('#id_mec_resistencia').empty().append('<option value="">--- Seleccionar ---</option>');
+        $('#id_sub_mec_resistencia').empty().append('<option value="">--- Seleccionar ---</option>');
+
+        // Solo cargar si hay un microorganismo seleccionado
+        if (micro_id) {
+            cargarAntibioticos(micro_id);
+            cargarMecanismos(micro_id);
+        }
+    });
+
+    // Cambio de mecanismo -> actualizar subtipos
+    $('#id_mec_resistencia').change(function() {
+        var mec_id = $(this).val();
+        cargarSubtipos(mec_id);
+    });
+
+    // Al cargar la página, verificar si hay selects pre-cargados
+    // Si ya tienen opciones (vinieron del servidor), NO hacer AJAX
+    var micro_id_init = $('#id_microorganismo').val();
+
+    // Verificar si los selects YA tienen opciones (vinieron del POST)
+    var antibiotico_tiene_opciones = $('#id_antibiotico option').length > 1;
+    var mecanismo_tiene_opciones = $('#id_mec_resistencia option').length > 1;
+
+    if (micro_id_init) {
+        // Guardar valores seleccionados antes de hacer AJAX
+        var antibiotico_seleccionado = $('#id_antibiotico').val();
+        var mecanismo_seleccionado = $('#id_mec_resistencia').val();
+        var sub_mec_seleccionado = $('#id_sub_mec_resistencia').val();
+
+        // Guardar en data attributes por si se necesitan después
+        $('#id_antibiotico').data('selected', antibiotico_seleccionado);
+        $('#id_mec_resistencia').data('selected', mecanismo_seleccionado);
+        $('#id_sub_mec_resistencia').data('selected', sub_mec_seleccionado);
+
+        // Solo hacer AJAX si NO hay opciones pre-cargadas
+        if (!antibiotico_tiene_opciones) {
+            cargarAntibioticos(micro_id_init, antibiotico_seleccionado);
+        }
+
+        if (!mecanismo_tiene_opciones) {
+            cargarMecanismos(micro_id_init, mecanismo_seleccionado);
+        }
+    }
+
+    // Inicializar Select2
+    // Inicializar Select2 GENÉRICO para selects múltiples
+    $("#id_sexo, #id_ambito, #id_servicio, #id_tipo_muestra").select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Selecciona opciones...',
+        allowClear: true,
+        width: '100%',
+        language: {
+            searching: () => '🔍 Buscando...',
+            noResults: () => '❌ No se encontraron resultados'
+        }
+    });
+
+    // Select2 para MICROORGANISMO
+    $('#id_microorganismo').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Selecciona un microorganismo...',
+        allowClear: true,
+        width: '100%',
+        language: {
+            searching: () => '🔍 Buscando...',
+            noResults: () => '❌ No se encontraron resultados'
+        }
+    }).on('select2:open', function(e) {
+        // Buscar el campo de búsqueda dentro del contenedor específico de ESTE select
+        const container = $(e.target).data('select2').$dropdown;
+        const searchField = container.find('.select2-search__field');
+        if (searchField.length) {
+            searchField.attr('placeholder', '🔍 Escribe para filtrar microorganismos...');
+        }
+    }).on('change', function() {
+        var micro_id = $(this).val();
+        $('#id_antibiotico').empty().append('<option value="">--- Seleccionar ---</option>');
+        $('#id_mec_resistencia').empty().append('<option value="">--- Seleccionar ---</option>');
+        $('#id_sub_mec_resistencia').empty().append('<option value="">--- Seleccionar ---</option>');
+        if (micro_id) {
+            cargarAntibioticos(micro_id);
+            cargarMecanismos(micro_id);
+        }
+    });
+
+    // Select2 para ANTIBIÓTICO
+    $('#id_antibiotico').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Selecciona un antibiótico...',
+        allowClear: true,
+        width: '100%',
+        language: {
+            searching: () => '🔍 Buscando...',
+            noResults: () => '❌ No se encontraron resultados'
+        }
+    }).on('select2:open', function(e) {
+        const container = $(e.target).data('select2').$dropdown;
+        const searchField = container.find('.select2-search__field');
+        if (searchField.length) {
+            searchField.attr('placeholder', '🔍 Escribe para filtrar antibióticos...');
+        }
+    });
+
+    // Select2 para MECANISMO
+    $('#id_mec_resistencia').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Selecciona un mecanismo...',
+        allowClear: true,
+        width: '100%',
+        language: {
+            searching: () => '🔍 Buscando...',
+            noResults: () => '❌ No se encontraron resultados'
+        }
+    }).on('select2:open', function(e) {
+        const container = $(e.target).data('select2').$dropdown;
+        const searchField = container.find('.select2-search__field');
+        if (searchField.length) {
+            searchField.attr('placeholder', '🔍 Escribe para filtrar mecanismos...');
+        }
+    }).on('change', function() {
+        var mec_id = $(this).val();
+        cargarSubtipos(mec_id);
+    });
+
+    // Select2 para SUBTIPO
+    $('#id_sub_mec_resistencia').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Selecciona un subtipo...',
+        allowClear: true,
+        width: '100%',
+        language: {
+            searching: () => '🔍 Buscando...',
+            noResults: () => '❌ No se encontraron resultados'
+        }
+    }).on('select2:open', function(e) {
+        const container = $(e.target).data('select2').$dropdown;
+        const searchField = container.find('.select2-search__field');
+        if (searchField.length) {
+            searchField.attr('placeholder', '🔍 Escribe para filtrar subtipos...');
+        }
+    });
+
+    // Select2 para VERSIÓN EUCAST y AGRUPACIÓN
+    $('#id_version_eucast, #id_agrupacion').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Selecciona una opción...',
+        allowClear: true,
+        width: '100%',
+        minimumResultsForSearch: -1
+    });
+
+
+    // Mostrar overlay de carga al enviar formulario
+    $form.on('submit', function () {
+        $("#loading-overlay").fadeIn(150);
+    });
+});
+</script>
+
+{% endblock %}
