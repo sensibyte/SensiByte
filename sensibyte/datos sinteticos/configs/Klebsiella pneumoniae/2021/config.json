@@ -11,8 +11,8 @@
   "edad": {
     "distribucion": "weibull",
     "parametros": {
-      "shape": 5.545586,
-      "scale": 74.234699
+      "shape": 2.5,
+      "scale": 90
     }
   },
   "microorganismo": {
@@ -202,51 +202,14 @@
       "Cepa productora de carbapenemasa KPC y NDM-1"
     ],
     "porcentajes": [
-      43.27,
+      45.27,
       34.8,
-      20.0,
-      1.345,
-      0.585
+      16.0,
+      2.045,
+      1.585
     ]
   },
   "antibioticos": [
-    {
-      "nombres": [
-        "Amoxicilina",
-        "AMX"
-      ],
-      "probabilidades": {
-        "blanco": 1.43,
-        "R": 20.86,
-        "S": 77.71
-      },
-      "valores_cmi": {
-        "R": {
-          "valores": [
-            "8",
-            "16",
-            ">32"
-          ],
-          "probabilidades": [
-            36.27,
-            30.39,
-            33.34
-          ]
-        },
-        "S": {
-          "valores": [
-            "<=2",
-            "<=4",
-            "4"
-          ],
-          "probabilidades": [
-            3.16,
-            71.58,
-            25.26
-          ]
-        }
-      }
-    },
     {
       "nombres": [
         "Amoxicilina/Ác. clavulánico",
@@ -295,9 +258,9 @@
       ],
       "probabilidades": {
         "blanco": 0.0,
-        "R": 20.42,
-        "S": 63.73,
-        "I": 15.85
+        "R": 22.42,
+        "S": 62.73,
+        "I": 14.85
       },
       "valores_cmi": {
         "R": {
@@ -355,8 +318,8 @@
       ],
       "probabilidades": {
         "blanco": 0.0,
-        "R": 16.9,
-        "S": 83.1
+        "R": 17.9,
+        "S": 82.1
       },
       "valores_cmi": {
         "R": {
@@ -398,8 +361,8 @@
       ],
       "probabilidades": {
         "blanco": 0.7,
-        "R": 16.9,
-        "S": 82.39
+        "R": 10.9,
+        "S": 88.39
       },
       "valores_cmi": {
         "R": {
@@ -494,10 +457,10 @@
         "MER"
       ],
       "probabilidades": {
-        "blanco": 71.13,
+        "blanco": 67.13,
         "I": 1.06,
         "R": 0.7,
-        "S": 27.11
+        "S": 31.11
       },
       "valores_cmi": {
         "R": {
@@ -543,8 +506,8 @@
       ],
       "probabilidades": {
         "blanco": 0.0,
-        "R": 7.527,
-        "S": 92.473
+        "R": 8.527,
+        "S": 91.473
       },
       "valores_cmi": {
         "R": {
@@ -574,8 +537,8 @@
       ],
       "probabilidades": {
         "blanco": 4.93,
-        "R": 12.782,
-        "S": 82.288
+        "R": 4.782,
+        "S": 91.288
       },
       "valores_cmi": {
         "R": {
@@ -605,8 +568,8 @@
       ],
       "probabilidades": {
         "blanco": 0.35,
-        "R": 4.716,
-        "S": 94.934
+        "R": 3.716,
+        "S": 95.934
       },
       "valores_cmi": {
         "R": {
@@ -682,8 +645,8 @@
       ],
       "probabilidades": {
         "blanco": 0.0,
-        "R": 18.11,
-        "S": 81.89
+        "R": 29.11,
+        "S": 70.89
       },
       "valores_cmi": {
         "R": {
