@@ -351,40 +351,48 @@ def vista_tendencias_regresion(request):
         if not res:
             continue
 
-        # Preparamos para pasar al contexto
-        resultados_lista.append({
-            "nombre": modelo_nombre.capitalize(),
-            "r2": res.get("r2", "N/A"),
-            "mae": res.get("mae", "N/A"),
-            "rmse": res.get("rmse", "N/A"),
-            "edof": res.get("edof", "N/A"),
-            "lambda": res.get("lambda", "N/A"),
-            "n_splines": res.get("n_splines", "N/A"),
-            "p_valor": res.get("p_valor", "N/A"),
-            "pred_siguiente": res.get("pred_siguiente", "N/A"),
-            "pred_lower": res.get("pred_lower", "N/A"),
-            "pred_upper": res.get("pred_upper", "N/A"),
-            "tasa_variacion": res.get("tasa_variacion", "N/A"),
-            "tasa_variacion_ic_lower": res.get("tasa_variacion_ic_lower", "N/A"),
-            "tasa_variacion_ic_upper": res.get("tasa_variacion_ic_upper", "N/A"),
-            "tendencia": res.get("tendencia", "N/A"),
-            "grafico": res.get("grafico", None),
-            "diagnosticos": res.get("diagnosticos", {}),
-            "intercepto": res.get("intercepto", "N/A"),
-            "pendiente": res.get("pendiente", "N/A"),
-            "p_valor_f": res.get("p_valor_f", "N/A"),
-            "f_statistic": res.get("f_statistic", "N/A"),
-            "significativo": res.get("significativo", False),
-            "aic": res.get("aic", "N/A"),
-            "bic": res.get("bic", "N/A"),
-            "cv_mae": res.get("cv_mae", "N/A"),
-            "cv_mae_std": res.get("cv_mae_std", "N/A"),
-            "cv_rmse": res.get("cv_rmse", "N/A"),
-            "cv_rmse_std": res.get("cv_rmse_std", "N/A"),
-            "cv_smape": res.get("cv_smape", "N/A"),
-            "cv_smape_std": res.get("cv_smape_std", "N/A"),
-            "cv_num_folds": res.get("cv_num_folds", 0),
-        })
+        # Si encontramos errores, lo mostramos en la UI
+        # sin este bloque resulta difícil ver qué pasó, porqué no hay resultado
+        if "error" in res:
+            resultados_lista.append({
+                "nombre": modelo_nombre.capitalize(),
+                "error": res["error"]
+            })
+        else:
+            # Preparamos para pasar al contexto
+            resultados_lista.append({
+                "nombre": modelo_nombre.capitalize(),
+                "r2": res.get("r2", "N/A"),
+                "mae": res.get("mae", "N/A"),
+                "rmse": res.get("rmse", "N/A"),
+                "edof": res.get("edof", "N/A"),
+                "lambda": res.get("lambda", "N/A"),
+                "n_splines": res.get("n_splines", "N/A"),
+                "p_valor": res.get("p_valor", "N/A"),
+                "pred_siguiente": res.get("pred_siguiente", "N/A"),
+                "pred_lower": res.get("pred_lower", "N/A"),
+                "pred_upper": res.get("pred_upper", "N/A"),
+                "tasa_variacion": res.get("tasa_variacion", "N/A"),
+                "tasa_variacion_ic_lower": res.get("tasa_variacion_ic_lower", "N/A"),
+                "tasa_variacion_ic_upper": res.get("tasa_variacion_ic_upper", "N/A"),
+                "tendencia": res.get("tendencia", "N/A"),
+                "grafico": res.get("grafico", None),
+                "diagnosticos": res.get("diagnosticos", {}),
+                "intercepto": res.get("intercepto", "N/A"),
+                "pendiente": res.get("pendiente", "N/A"),
+                "p_valor_f": res.get("p_valor_f", "N/A"),
+                "f_statistic": res.get("f_statistic", "N/A"),
+                "significativo": res.get("significativo", False),
+                "aic": res.get("aic", "N/A"),
+                "bic": res.get("bic", "N/A"),
+                "cv_mae": res.get("cv_mae", "N/A"),
+                "cv_mae_std": res.get("cv_mae_std", "N/A"),
+                "cv_rmse": res.get("cv_rmse", "N/A"),
+                "cv_rmse_std": res.get("cv_rmse_std", "N/A"),
+                "cv_smape": res.get("cv_smape", "N/A"),
+                "cv_smape_std": res.get("cv_smape_std", "N/A"),
+                "cv_num_folds": res.get("cv_num_folds", 0),
+            })
 
         estadisticas_globales = get_global_statistics(datos_tendencia)
 
@@ -1025,7 +1033,7 @@ def build_regression_analysis(df: pd.DataFrame, agrupacion: str, titulo_analisis
     # Validación cruzada mediante rolling origin y selección de hiperparámetros por GridSearch - Capacidad PREDICTIVA
     validacion_cv = foward_chaining_expanding_window_cv(df)
 
-    # ==================== REGRESIÓN LINEAL ====================
+    # REGRESIÓN LINEAL
     try:
         X_const = sm.add_constant(X)
         modelo_lin = sm.OLS(y, X_const).fit()
@@ -1445,7 +1453,7 @@ def build_regression_analysis(df: pd.DataFrame, agrupacion: str, titulo_analisis
             "diagnosticos": diagnosticos_gam,
 
             "cv_mae": cv_metrics_gam.get("mae_mean", "N/A"),
-            "cv_mae_std": cv_metrics_lin.get("mae_std", "N/A"),
+            "cv_mae_std": cv_metrics_gam.get("mae_std", "N/A"),
             "cv_rmse": cv_metrics_gam.get("rmse_mean", "N/A"),
             "cv_rmse_std": cv_metrics_gam.get("rmse_std", "N/A"),
             "cv_smape": cv_metrics_gam.get("smape_mean", "N/A"),
@@ -1463,26 +1471,44 @@ def build_regression_analysis(df: pd.DataFrame, agrupacion: str, titulo_analisis
 def foward_chaining_expanding_window_cv(df: pd.DataFrame) -> dict:
     """
     Realiza validación cruzada Rolling Forward Chaining/ Expanding Window con ventana de test
-    de tamaño 1 (one-step ahead forecasting) para series temporales. También realiza la selección del
+    de tamaño adaptable para series temporales. También realiza la selección del
     hiperparámetro lambda para la regresión GAM por GridSearch.
     ref: https://medium.com/@pacosun/respect-the-order-cross-validation-in-time-series-7d12beab79a1
-    """
-    # Inicializamos parámetros
-    n = len(df)
-    min_train = 3
 
-    # Utilizaremos 1 periodo para predicción, para un mínimo de 3 de entrenamiento son, al menos, 4 puntos
-    if n < min_train + 1:
+    La ventana de predicción se adapta según los datos disponibles:
+    - Hasta 10 períodos: ventana test one-step ahead, test = 1
+    - Entre 11 y 20 períodos: ventana two-step ahead, test = 2
+    - Más de 20 períodos: ventana three-step ahead, test = 3
+    """
+
+    # Determinar el tamaño de ventana de predicción según datos disponibles
+    n = len(df)
+
+    if n <= 10:
+        test_window = 1
+        min_train = 3
+    elif n <= 20:
+        test_window = 2
+        min_train = 5
+    else:
+        test_window = 3
+        min_train = 7
+
+    # Verificar que tenemos suficientes datos
+    if n < min_train + test_window:
+        error_msg = f"Insuficientes datos para CV: se necesitan al menos {min_train + test_window} períodos, pero solo hay {n}"
         return {
-            "lineal": {"error": "Insuficientes datos para CV"},
-            "gam": {"error": "Insuficientes datos para CV"},
+            "lineal": {"error": error_msg},
+            "gam": {"error": error_msg},
         }
 
-    num_folds = n - min_train
+    # Calcular número de folds
+    num_folds = n - min_train - test_window + 1
 
-    print(f"\n=== Validación Cruzada Rolling-Origin Modelo Lineal ===")
+    print(f"\n=== Validación Cruzada Rolling-Origin ===")
     print(f"Total períodos: {n}")
     print(f"Ventana mínima entrenamiento: {min_train}")
+    print(f"Ventana de predicción (test): {test_window} período(s)")
     print(f"Número de folds: {num_folds}")
 
     errores = {
@@ -1498,51 +1524,65 @@ def foward_chaining_expanding_window_cv(df: pd.DataFrame) -> dict:
     print("FASE 1: EVALUACIÓN DE HIPERPARÁMETROS")
     print(f"{"=" * 60}")
 
+    gam_evaluation_errors = []  # Para guardar errores de eval GAM
+
     for i in range(num_folds):
         train_end = min_train + i
-        test_idx = train_end  # test el siguiente punto temporal
+        test_start = train_end
+        test_end = test_start + test_window # test el siguiente punto temporal
 
         df_train = df.iloc[:train_end].copy()
-        y_test = df.iloc[test_idx]["porcentaje_si"]
+        df_test = df.iloc[test_start:test_end].copy()
 
         X_train = df_train["periodo_num"].values.reshape(-1, 1)
         y_train = df_train["porcentaje_si"].values
-        X_test = np.array([[df.iloc[test_idx]["periodo_num"]]])
+        X_test = df_test["periodo_num"].values.reshape(-1, 1)
+        y_test = df_test["porcentaje_si"].values
 
-        print(f"\nFold {i + 1}/{num_folds}: Train={train_end}, Test={test_idx + 1}")
+        print(f"\nFold {i + 1}/{num_folds}: Train={train_end}, Test={test_start + 1}-{test_end}")
 
         # MODELO LINEAL
         try:
             X_train_const = sm.add_constant(X_train, has_constant="add")
             X_test_const = sm.add_constant(X_test, has_constant="add")
-
             modelo_lin = sm.OLS(y_train, X_train_const).fit()
 
             # Cálculo de métricas
-            pred_lin = modelo_lin.predict(X_test_const)[0]
+            pred_lin = modelo_lin.predict(X_test_const)
             pred_lin = np.clip(pred_lin, 0, 100)
 
-            error_crudo = y_test - pred_lin
-            smape_lin = smape(y_test, pred_lin)
+            errores_crudos = y_test - pred_lin
+            mae_lin = np.mean(np.abs(errores_crudos))
+            rmse_lin = np.sqrt(np.mean(errores_crudos ** 2))
+            smape_lin = np.mean([smape(y_test[j], pred_lin[j]) for j in range(len(y_test))])
 
-            errores["lineal"]["errores_crudos"].append(error_crudo)
-            errores["lineal"]["smape"].append(smape_lin)
+            # Guaramos los errores
+            for err in errores_crudos:
+                errores["lineal"]["errores_crudos"].append(err)
+            for j in range(len(y_test)):
+                errores["lineal"]["smape"].append(smape(y_test[j], pred_lin[j]))
 
-            mae_lin = np.abs(error_crudo)
-            rmse_lin = np.abs(error_crudo)  # En un punto, MAE = RMSE
+            print(f"  Lineal: MAE={mae_lin:.2f}%, RMSE={rmse_lin:.2f}, SMAPE={smape_lin:.2f}%")
 
-            print(f"  Lineal: pred={pred_lin:.2f}%, real={y_test:.2f}%, "
-                  f"MAE={mae_lin:.2f}%, RMSE={rmse_lin:.2f}, SMAPE={smape_lin:.2f}%")
+            if test_window > 1:
+                for j in range(len(y_test)):
+                    print(f"    t+{j + 1}: pred={pred_lin[j]:.2f}%, real={y_test[j]:.2f}%")
+            else:
+                print(f"    pred={pred_lin[0]:.2f}%, real={y_test[0]:.2f}%")
 
         except Exception as e:
-            print(f"  Lineal: Error - {str(e)}")
-            errores["lineal"]["errores_crudos"].append(np.nan)
-            errores["lineal"]["smape"].append(np.nan)
+            # Errores detallados
+            error_detail = f"Fold {i + 1}: {str(e)}"
+            print(f"  Lineal: Error - {error_detail}")
+            for _ in range(test_window):
+                errores["lineal"]["errores_crudos"].append(np.nan)
+                errores["lineal"]["smape"].append(np.nan)
 
         # GAM (evaluar TODAS las lambdas)
         if len(df_train) < 5:
-            print(f"  GAM: Saltando (solo {len(df_train)} obs, mínimo 5)")
-            # NO añadir nada, este fold no cuenta para GAM
+            msg = f"Saltando fold {i + 1} - solo {len(df_train)} obs (mínimo 5 para GAM)"
+            print(f"  GAM: {msg}")
+            gam_evaluation_errors.append(msg)
             continue
 
         try:
@@ -1563,12 +1603,10 @@ def foward_chaining_expanding_window_cv(df: pd.DataFrame) -> dict:
             y_train_prop_safe = np.clip(y_train_prop, epsilon, 1 - epsilon)
             y_train_logit = logit(y_train_prop_safe)
 
-            X_test_fold = np.array([[df.iloc[test_idx]["periodo_num"]]])
-            y_test_fold = df.iloc[test_idx]["porcentaje_si"]
-
             n_splines_cv, spline_order = adaptative_config_gam(len(X_train_gam))
 
             # Probar CADA lambda en ESTE fold
+            lambdas_fallidas_fold = 0
             for lam in lam_grid:
                 try:
                     # Ajustamos el modelo GAM
@@ -1578,30 +1616,41 @@ def foward_chaining_expanding_window_cv(df: pd.DataFrame) -> dict:
                     ).fit(X_train_gam, y_train_logit)
 
                     # Predicciones para el modelo con esa lambda
-                    pred_logit = gam.predict(X_test_fold)[0]
+                    pred_logit = gam.predict(X_test)
                     pred_prop = expit(pred_logit)
                     pred_percent = np.clip(pred_prop * 100, 0, 100)
 
-                    mae_gam = np.abs(y_test_fold - pred_percent)
+                    mae_gam = np.mean(np.abs(y_test - pred_percent))
 
                     # Acumular MAE de esta lambda en este fold (para selección)
                     gam_errors_by_lambda[lam].append(mae_gam)
 
                 except Exception as e:
                     # Si falla, registrar NaN
+                    lambdas_fallidas_fold += 1
                     gam_errors_by_lambda[lam].append(np.nan)
 
-            print(f"  GAM: Evaluadas {len(lam_grid)} lambdas")
+            # Registro de lambdas fallidas
+            if lambdas_fallidas_fold > 0:
+                print(f"  GAM: Evaluadas {len(lam_grid)} lambdas ({lambdas_fallidas_fold} fallaron)")
+            else:
+                print(f"  GAM: Evaluadas {len(lam_grid)} lambdas (todas exitosas)")
 
         except Exception as e:
-            print(f"  GAM: Error general - {str(e)}")
+            error_detail = f"Fold {i + 1}: {str(e)}"
+            print(f"  GAM: Error general - {error_detail}")
+            gam_evaluation_errors.append(error_detail)
 
     #  PASO 2: Selección de LAMBDA (usando MAE)
     if not gam_errors_by_lambda:
-        print("\n❌ No se pudo evaluar GAM en ningún fold")
+        error_msg = "No se pudo evaluar GAM en ningún fold"
+        if gam_evaluation_errors:
+            error_msg += f". Errores encontrados: {'; '.join(gam_evaluation_errors[:3])}"
+
+        print(f"\n❌ {error_msg}")
         resultados_cv = {
-            "lineal": get_metrics(errores["lineal"]),
-            "gam": {"error": "No se pudo evaluar"}
+            "lineal": get_metrics(errores["lineal"], test_window=test_window),
+            "gam": {"error": error_msg}
         }
         return resultados_cv
 
@@ -1628,15 +1677,17 @@ def foward_chaining_expanding_window_cv(df: pd.DataFrame) -> dict:
                   f"({len(valid_errors)} folds)")
 
     if not lambda_results:
-        print("\n❌ Ninguna lambda produjo resultados válidos")
+        error_msg = "Ninguna lambda produjo resultados válidos en CV"
+        print(f"\n❌ {error_msg}")
         resultados_cv = {
-            "lineal": get_metrics(errores["lineal"]),
-            "gam": {"error": "Ninguna lambda válida"}
+            "lineal": get_metrics(errores["lineal"], test_window=test_window),
+            "gam": {"error": error_msg}
         }
         return resultados_cv
 
     # Mejor LAMBDA: la que minimiza MAE
-    best_lambda = min(lambda_results.keys(), key=lambda k: lambda_results[k]["mean_mae"])
+    best_lambda = min(lambda_results.keys(),
+                      key=lambda k: lambda_results[k]["mean_mae"])
     best_mae = lambda_results[best_lambda]["mean_mae"]
     best_std = lambda_results[best_lambda]["std_mae"]
 
@@ -1649,11 +1700,14 @@ def foward_chaining_expanding_window_cv(df: pd.DataFrame) -> dict:
     print(f"FASE 3: EVALUACIÓN FINAL CON LAMBDA={best_lambda:.4f}")
     print(f"{"=" * 60}")
 
+    folds_exitosos_gam = 0
     for i in range(num_folds):
         train_end = min_train + i
-        test_idx = train_end
+        test_start = train_end
+        test_end = test_start + test_window
 
         df_train = df.iloc[:train_end].copy()
+        df_test = df.iloc[test_start:test_end].copy()
 
         if len(df_train) < 5:
             continue
@@ -1667,8 +1721,8 @@ def foward_chaining_expanding_window_cv(df: pd.DataFrame) -> dict:
             y_train_prop_safe = np.clip(y_train_prop, epsilon, 1 - epsilon)
             y_train_logit = logit(y_train_prop_safe)
 
-            X_test_fold = np.array([[df.iloc[test_idx]["periodo_num"]]])
-            y_test_fold = df.iloc[test_idx]["porcentaje_si"]
+            X_test_fold = df_test["periodo_num"].values.reshape(-1, 1)
+            y_test_fold = df_test["porcentaje_si"].values
 
             n_splines_cv, spline_order = adaptative_config_gam(len(X_train_gam))
 
@@ -1677,31 +1731,54 @@ def foward_chaining_expanding_window_cv(df: pd.DataFrame) -> dict:
                 lam=best_lambda
             ).fit(X_train_gam, y_train_logit)
 
-            pred_logit = gam_final.predict(X_test_fold)[0]
+            pred_logit = gam_final.predict(X_test_fold)
             pred_prop = expit(pred_logit)
             pred_percent = np.clip(pred_prop * 100, 0, 100)
 
-            error_crudo = y_test_fold - pred_percent
-            smape_gam = smape(y_test_fold, pred_percent)
+            errores_crudos = y_test_fold - pred_percent
+            mae_gam = np.mean(np.abs(errores_crudos))
+            rmse_gam = np.sqrt(np.mean(errores_crudos ** 2))
+            smape_gam = np.mean([smape(y_test_fold[j], pred_percent[j])
+                                 for j in range(len(y_test_fold))])
 
-            errores["gam"]["errores_crudos"].append(error_crudo)
-            errores["gam"]["smape"].append(smape_gam)
+            for err in errores_crudos:
+                errores["gam"]["errores_crudos"].append(err)
+            for j in range(len(y_test_fold)):
+                errores["gam"]["smape"].append(smape(y_test_fold[j], pred_percent[j]))
 
-            mae_gam = np.abs(error_crudo)
-            rmse_gam = np.abs(error_crudo)  # En un punto, MAE=RMSE
+            folds_exitosos_gam += 1
 
-            print(f"  Fold {i + 1}: pred={pred_percent:.2f}%, real={y_test_fold:.2f}%, "
-                  f"MAE={mae_gam:.2f}%, RMSE={rmse_gam:.2f}, SMAPE={smape_gam:.2f}%")
+            print(f"  Fold {i + 1}: MAE={mae_gam:.2f}%, RMSE={rmse_gam:.2f}, "
+                  f"SMAPE={smape_gam:.2f}%")
+            if test_window > 1:
+                for j in range(len(y_test_fold)):
+                    print(f"    t+{j + 1}: pred={pred_percent[j]:.2f}%, "
+                          f"real={y_test_fold[j]:.2f}%")
+            else:
+                print(f"    pred={pred_percent[0]:.2f}%, real={y_test_fold[0]:.2f}%")
 
         except Exception as e:
-            print(f"  Fold {i + 1}: Error - {e}")
-            errores["gam"]["errores_crudos"].append(np.nan)
-            errores["gam"]["smape"].append(np.nan)
+            error_detail = f"Fold {i + 1}: {str(e)}"
+            print(f"  {error_detail}")
+            gam_evaluation_errors.append(error_detail)
+            for _ in range(test_window):
+                errores["gam"]["errores_crudos"].append(np.nan)
+                errores["gam"]["smape"].append(np.nan)
+
+    # Verificar si GAM tuvo suficientes folds exitosos
+    if folds_exitosos_gam == 0:
+        error_msg = f"GAM falló en todos los folds de evaluación final. Errores: {'; '.join(gam_evaluation_errors[:3])}"
+        print(f"\n❌ {error_msg}")
+        resultados_cv = {
+            "lineal": get_metrics(errores["lineal"], test_window=test_window),
+            "gam": {"error": error_msg}
+        }
+        return resultados_cv
 
     # Resumen final para el log
     resultados_cv = {
-        "lineal": get_metrics(errores["lineal"]),
-        "gam": get_metrics(errores["gam"])
+        "lineal": get_metrics(errores["lineal"], test_window=test_window),
+        "gam": get_metrics(errores["gam"], test_window=test_window)
     }
 
     if "error" not in resultados_cv["gam"]:
@@ -1709,9 +1786,19 @@ def foward_chaining_expanding_window_cv(df: pd.DataFrame) -> dict:
         resultados_cv["gam"]["lambda_mae_cv"] = round(float(best_mae), 4)
         resultados_cv["gam"]["lambda_std_cv"] = round(float(best_std), 4)
 
+    # Añadir información de configuración
+    resultados_cv["config"] = {
+        "total_periodos": n,
+        "ventana_test": test_window,
+        "ventana_train_min": min_train,
+        "num_folds": num_folds
+    }
+
     print(f"\n{"=" * 60}")
     print("RESUMEN VALIDACIÓN CRUZADA")
     print(f"{"=" * 60}")
+    print(f"Configuración: {n} períodos, ventana test={test_window}, "
+          f"train mín={min_train}")
 
     for modelo in ["lineal", "gam"]:
         metrics = resultados_cv[modelo]
@@ -1729,10 +1816,12 @@ def foward_chaining_expanding_window_cv(df: pd.DataFrame) -> dict:
     return resultados_cv
 
 
-def get_metrics(errores_dict: dict) -> dict:
+def get_metrics(errores_dict: dict, test_window: int = 1) -> dict:
     """
-    Calcula métricas agregadas de validación cruzada.
-    Calcula MAE y RMSE correctamente sobre todos los errores crudos.
+    Calcula métricas agregadas de validación cruzada. Toma como argumentos:
+    errores_dict: Diccionario con 'errores_crudos' y 'smape'
+    test_window: Tamaño de la ventana de predicción (1, 2 o 3)
+    Devuelve un diccionario con métricas agregadas y sus desviaciones estándar
     """
     errores_crudos = np.array(errores_dict["errores_crudos"])
     smape_arr = np.array(errores_dict["smape"])
@@ -1744,26 +1833,55 @@ def get_metrics(errores_dict: dict) -> dict:
     if len(errores_validos) == 0:
         return {"error": "No hay folds válidos"}
 
-    # Calcular MAE y RMSE sobre todos los errores
-    mae_total = np.mean(np.abs(errores_validos))
-    rmse_total = np.sqrt(np.mean(errores_validos ** 2))
+    # Número de folds (cada fold tiene test_window predicciones)
+    num_folds = len(errores_validos) // test_window
 
-    # Para calcular desviaciones estándar, necesitamos los errores por fold
-    # MAE por fold
-    mae_por_fold = np.abs(errores_validos)
-    # RMSE por fold (en este caso, cada fold es un punto, así que será lo mismo, mientras no se cambie el tamaño
-    # de la ventana de predicción)
-    rmse_por_fold = np.abs(errores_validos)
+    # Si no hay suficientes datos para calcular por fold, usar aproximación
+    if num_folds < 1:
+        num_folds = 1
 
+    # Reorganizar errores por fold
+    # Cada fold tiene 'test_window' predicciones consecutivas
+    mae_por_fold = []
+    rmse_por_fold = []
+    smape_por_fold = []
+
+    for i in range(num_folds):
+        start_idx = i * test_window
+        end_idx = start_idx + test_window
+
+        # Extraer errores de este fold
+        errores_fold = errores_validos[start_idx:end_idx]
+        smape_fold = smape_validos[start_idx:end_idx]
+
+        if len(errores_fold) > 0:
+            # MAE del fold: promedio de errores absolutos
+            mae_fold = np.mean(np.abs(errores_fold))
+            mae_por_fold.append(mae_fold)
+
+            # RMSE del fold: raíz del promedio de errores al cuadrado
+            rmse_fold = np.sqrt(np.mean(errores_fold ** 2))
+            rmse_por_fold.append(rmse_fold)
+
+            # SMAPE del fold: promedio
+            smape_fold_mean = np.mean(smape_fold)
+            smape_por_fold.append(smape_fold_mean)
+
+    # Convertir a arrays para cálculos
+    mae_por_fold = np.array(mae_por_fold)
+    rmse_por_fold = np.array(rmse_por_fold)
+    smape_por_fold = np.array(smape_por_fold)
+
+    # Métricas globales y sus desviaciones estándar
     return {
-        "mae_mean": round(float(mae_total), 2),
+        "mae_mean": round(float(np.mean(mae_por_fold)), 2),
         "mae_std": round(float(np.std(mae_por_fold)), 2),
-        "rmse_mean": round(float(rmse_total), 2),
+        "rmse_mean": round(float(np.mean(rmse_por_fold)), 2),
         "rmse_std": round(float(np.std(rmse_por_fold)), 2),
-        "smape_mean": round(float(np.mean(smape_validos)), 2),
-        "smape_std": round(float(np.std(smape_validos)), 2),
-        "num_folds_validos": len(errores_validos),
-        "num_folds_total": len(errores_crudos)
+        "smape_mean": round(float(np.mean(smape_por_fold)), 2),
+        "smape_std": round(float(np.std(smape_por_fold)), 2),
+        "num_folds_validos": len(mae_por_fold),
+        "num_folds_total": num_folds
     }
 
 
