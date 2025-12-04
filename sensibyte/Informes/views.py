@@ -33,9 +33,13 @@ from Base.models import (
 )
 from .forms import FiltroResistenciaForm, InformePredefinidoResistenciaForm
 from .utils import calculate_ic95, build_antibiotics_bar_chart, build_piechart, build_mic_histogram, proportions_test
+from Base.decorators import role_required
+from django.utils.decorators import method_decorator
 
 estilos = getSampleStyleSheet()
 
+
+@method_decorator(role_required("admin", "microbiologo"), name="dispatch")
 class ResultadosResistenciaView(FormView):
     """Vista del explorador de resistencias"""
     template_name = "Informes/explorador.html"
@@ -551,7 +555,7 @@ class ResultadosResistenciaView(FormView):
             "histogramas_cmi": histogramas_cmi
         }
 
-
+@method_decorator(role_required("admin", "microbiologo", "clinico"), name="dispatch")
 class InformePredefinidoResistenciaPDFView(FormView):
     """Vista encargada de la generación de informes predefinidos en formato PDF con ReportLab
     url Reportlab: https://docs.reportlab.com/reportlab/userguide/ch1_intro/"""

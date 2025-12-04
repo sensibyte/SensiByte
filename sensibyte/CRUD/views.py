@@ -19,6 +19,7 @@ from django.views.generic import FormView
 from django.views.generic import ListView, DetailView, UpdateView
 
 from Base.decorators import role_required
+from Base.global_models import Microorganismo
 from Base.models import (AmbitoHospital, ServicioHospital, Registro, ResultadoAntibiotico, Aislado, SexoHospital,
                          TipoMuestraHospital,
                          MicroorganismoHospital, PerfilAntibiogramaHospital, AliasInterpretacionHospital,
@@ -31,8 +32,10 @@ from .forms import ResultadoFormSet
 from .utils import *
 
 
+@method_decorator(role_required("admin", "microbiologo", "tecnico"), name="dispatch")
 class CargarAntibiogramaView(FormView):
     """Vista de carga de archivos con antibiogramas para el formulario CargarAntibiogramaForm"""
+
     template_name = "CRUD/cargar_antibiograma.html"  # plantilla
     form_class = CargarAntibiogramaForm  # formulario
     success_url = reverse_lazy("CRUD:cargar_antibiograma")  # redirección de éxito
@@ -156,6 +159,26 @@ class CargarAntibiogramaView(FormView):
 
         # Eliminamos el sufijo "_col" que introduce el formulario
         mapping = {k.replace("_col", ""): v for k, v in self.request.POST.items() if k.endswith("_col")}
+        
+        # Filtramos SÓLO por los registros que contienen el microorganismo seleccionado (o sus alias).
+        # Esto es importante, porque si hay varios microorganismos distintos para un mismo registro se crearían
+        # todos como del mismo microorganismo seleccionado en el formulario.
+        df_filtrado = self._filter_by_microorganism(
+            df,
+            mapping,  # necesitarás pasar mapping antes
+            selected_microorganismo,
+            microorganismo  # el objeto MicroorganismoHospital
+        )
+
+        if df_filtrado.empty:
+            messages.warning(
+                self.request,
+                f"No se encontraron registros para el microorganismo '{selected_microorganismo}' en los archivos cargados."
+            )
+            return redirect("CRUD:cargar_antibiograma")
+
+        df = df_filtrado  # Reemplazamos el DataFrame original
+        print(f"✅ {len(df)} registros encontrados para '{selected_microorganismo}'")
 
         # 3. Inicializamos contadores y cachés de objetos
         contadores = {
@@ -224,10 +247,14 @@ class CargarAntibiogramaView(FormView):
                     print(f"⚠️ Fila {contador_fila}: sin resultados de antibiograma válidos -> omitida")
                     continue  # pasamos a la siguiente fila
 
+                # Obtener el valor de la columna "microorganismo" del DataFrame
+                microorganismo_file = row.get(mapping.get("microorganismo", ""))
+                microorganismo_file = str(microorganismo_file).strip().lower()
+
                 # 4.3 Detectar mecanismos y aplicar resistencias adquiridas
                 mec_detectados, sub_detectados, resultados_finales = self._get_arm(
                     row, mapping, resultados_antibiograma,
-                    cache["mecanismos"], cache["subtipos"], cache["pos_vals"]
+                    cache["mecanismos"], cache["subtipos"], cache["pos_vals"], microorganismo_file
                 )
 
                 # 4.4 Verificar duplicados
@@ -272,7 +299,7 @@ class CargarAntibiogramaView(FormView):
 
         # 6. Mostramos mensajes finales en la consola
         self._show_final_messages(contadores, count_huerfanos)
-        # print(f"DEBUG: {errores_detallados}")
+        print(f"DEBUG: {errores_detallados}")
 
         return redirect("CRUD:cargar_antibiograma")  # volvemos a esta misma página
 
@@ -737,7 +764,7 @@ class CargarAntibiogramaView(FormView):
     def _get_arm(row: pandas.Series, mapping: dict,
                  resultados_procesados: dict[int, tuple[str | None, float | None, float | None]],
                  mecanismos: list[MecanismoResistenciaHospital], subtipos: list[SubtipoMecanismoResistenciaHospital],
-                 pos_vals: list[MecResValoresPositivosHospital]) -> tuple[
+                 pos_vals: list[MecResValoresPositivosHospital], microorganismo_file: str) -> tuple[
         set[MecanismoResistenciaHospital],
         set[SubtipoMecanismoResistenciaHospital],
         dict[int, tuple[str | None, float | None, float | None]]
@@ -748,10 +775,38 @@ class CargarAntibiogramaView(FormView):
         y tuplas de interpretación actualizados
         """
 
-        # detectamos los mecanismos y subtipos de mecanismos asociados al registro de fila
+        # Normalizar el nombre del microorganismo en el archivo
+        germen_normalizado = normalize_text(microorganismo_file)
+
+        # Detectamos los mecanismos y subtipos de mecanismos asociados al registro de fila:
+        # detección por columna de mecanismo o por comentario
         mech_detectados, sub_detectados = detect_arm(
             row, mapping, mecanismos, subtipos, pos_vals
         )
+
+        # Búsqueda de resistencias también por el nombre del microorganismo
+        if germen_normalizado:
+            # Buscar mecanismos en el nombre del microorganismo
+            for mecanismo in mecanismos:
+                # Construir lista de keywords normalizadas (nombre + alias) que contengan el nombre del mecanismo
+                keywords_norm = [normalize_text(mecanismo.mecanismo.nombre)] + \
+                                [normalize_text(a) for a in mecanismo.alias]
+
+                # Verifica si alguna keyword está en el nombre del germen del CSV
+                for kw in keywords_norm:
+                    if kw and kw in germen_normalizado:
+                        mech_detectados.add(mecanismo) # Importante! Añadirlo a la lista de detectados
+                        break  # No necesitamos seguir buscando keywords para este mecanismo
+
+            # También buscar los subtipos
+            for subtipo in subtipos:
+                keywords_norm = [normalize_text(subtipo.subtipo_mecanismo.nombre)] + \
+                                [normalize_text(a) for a in subtipo.alias]
+
+                for kw in keywords_norm:
+                    if kw and kw in germen_normalizado:
+                        sub_detectados.add(subtipo)
+                        break
 
         # obtenemos los ids de antibióticos a los que afecta la resistencia adquirida
         # unión de conjuntos con el operador |=
@@ -906,6 +961,47 @@ class CargarAntibiogramaView(FormView):
         if contadores["errores_resultados"]:
             messages.warning(self.request, f"{contadores["errores_resultados"]} resultados de antibiograma inválidos.")
 
+    @staticmethod
+    def _filter_by_microorganism(
+            df: pandas.DataFrame,
+            mapping: dict,
+            selected_microorganismo: Microorganismo,
+            microorganismo_hospital: MicroorganismoHospital
+    ) -> pandas.DataFrame:
+        """Filtra el DataFrame para mantener solo registros del microorganismo seleccionado"""
+
+        # Obtener el nombre de la columna de microorganismo del mapping
+        col_micro = mapping.get("microorganismo")
+
+        if not col_micro or col_micro not in df.columns:
+            print(f"⚠️ Columna de microorganismo '{col_micro}' no encontrada en el archivo")
+            return df  # Retorna sin filtrar si no hay columna
+
+        # Normaliza el nombre seleccionado
+        nombre_normalizado = normalize_text(selected_microorganismo.nombre)
+
+        # Crea la lista de alias normalizados del microorganismo
+        alias_normalizados = [
+            normalize_text(alias)
+            for alias in microorganismo_hospital.alias
+        ]
+        alias_normalizados.append(nombre_normalizado)  # Incluir el nombre principal
+
+        print(f"🔍 Buscando registros que coincidan con: {alias_normalizados}")
+
+        # Filtrar el DataFrame
+        mask = df[col_micro].apply(
+            lambda x: normalize_text(str(x)) in alias_normalizados if pd.notna(x) else False
+        )
+
+        df_filtrado = df[mask].copy()
+
+        registros_descartados = len(df) - len(df_filtrado)
+        if registros_descartados > 0:
+            print(f"🗑️ {registros_descartados} registros descartados (microorganismo diferente)")
+
+        return df_filtrado
+
 
 @login_required
 def search_antibiotics(request):
@@ -1046,7 +1142,7 @@ def apply_filters_to_queryset(queryset, filtros: dict) -> QuerySet[Registro, Reg
     # Evita duplicados cuando hay relaciones ManyToMany
     return queryset.distinct()
 
-
+@method_decorator(role_required("microbiologo"), name="dispatch")
 @require_POST
 def eliminar_registros_batch(request):
     """Función de vista encargada de eliminar Registros, en función de la opción seleccionada"""
@@ -1277,7 +1373,7 @@ def editar_mecanismos_resistencia(request, aislado_id: int):
         "aislado": aislado,
     })
 
-
+@method_decorator(role_required("microbiologo"), name="get")
 class RegistroDeleteView(DeleteView):
     """DeleteView de Django para objetos Registro"""
     model = Registro
