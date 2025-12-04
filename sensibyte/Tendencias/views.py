@@ -27,9 +27,12 @@ from Base.models import (Aislado, PerfilAntibiogramaHospital, MecanismoResistenc
                          CategoriaMuestraHospital)
 from .forms import ReinterpretacionForm
 from .utils import (smape, adaptative_config_gam, build_linear_regression_plot, build_gam_plot, build_acf_plot)
+from Base.decorators import role_required
+
 
 
 # Vista del formulario de reinterpretación de resultados
+@role_required("admin", "microbiologo")
 def reinterpretar_resultados(request):
     if request.method == "POST":
         form = ReinterpretacionForm(request.POST, hospital=request.user.hospital)
@@ -92,6 +95,7 @@ def reinterpretar_resultados(request):
 
 
 # Vista del formulario de análisis de tendencias con modelos de regresión
+@role_required("admin", "microbiologo", "clinico")
 def vista_tendencias_regresion(request):
     """Vista para analizar tendencias con modelos de regresión."""
     hospital = request.user.hospital
@@ -1052,6 +1056,10 @@ def build_regression_analysis(df: pd.DataFrame, agrupacion: str, titulo_analisis
         rmse_lin_in_sample = np.sqrt(mean_squared_error(y, y_pred_lin))
         smape_lin_in_sample = smape(y, y_pred_lin)
 
+        # Puesto que no se realiza la transformación logit, por dejarlo como la SEIMC, necesito controlar el espacio
+        # de predicción acotado a [0,100]
+        y_pred_lin = np.clip(y_pred_lin, 0, 100)
+
         print(modelo_lin.summary())
 
         # p-valor de la pendiente (coeficiente de periodo_num)
@@ -1176,18 +1184,21 @@ def build_regression_analysis(df: pd.DataFrame, agrupacion: str, titulo_analisis
         periodo_siguiente_const = sm.add_constant(periodo_siguiente, has_constant="add")
         pred_siguiente_lin = modelo_lin.predict(periodo_siguiente_const)[0]
 
+        # acotar a 0,100
+        pred_siguiente_lin = np.clip(pred_siguiente_lin, 0, 100)
+
         # Intervalo de predicción
         try:
             pred_ols = modelo_lin.get_prediction(periodo_siguiente_const)
             pred_interval = pred_ols.summary_frame(alpha=0.05)
 
             # Intervalo de CONFIANZA (más estrecho)
-            ci_lower_lin = max(0, float(pred_interval["mean_ci_lower"].values[0]))
-            ci_upper_lin = min(100, float(pred_interval["mean_ci_upper"].values[0]))
+            ci_lower_lin = np.clip(float(pred_interval["mean_ci_lower"].values[0]), 0, 100)
+            ci_upper_lin = np.clip(float(pred_interval["mean_ci_upper"].values[0]), 0, 100)
 
             # Intervalos de PREDICCIÓN
-            pred_lower_lin = max(0, float(pred_interval["obs_ci_lower"].values[0]))
-            pred_upper_lin = min(100, float(pred_interval["obs_ci_upper"].values[0]))
+            pred_lower_lin = np.clip(float(pred_interval["obs_ci_lower"].values[0]), 0, 100)
+            pred_upper_lin = np.clip(float(pred_interval["obs_ci_upper"].values[0]), 0, 100)
         except:
             pred_lower_lin = None
             pred_upper_lin = None
@@ -1198,6 +1209,7 @@ def build_regression_analysis(df: pd.DataFrame, agrupacion: str, titulo_analisis
 
         # Predicciones para toda la línea
         y_pred_extended = modelo_lin.predict(X_extended_const)
+        y_pred_extended = np.clip(y_pred_extended, 0, 100) # para acotar en 0,100
 
         # Intervalos de PREDICCIÓN para toda la línea
         try:
@@ -1911,6 +1923,7 @@ def get_global_statistics(datos_tendencia: list[dict]) -> dict:
 
 
 # Vistas JSONResponse para AJAX y relleno de los select
+@role_required("admin", "microbiologo")
 def get_antibioticos(request):
     microorganismo_hospital_id = request.GET.get("microorganismo_id")
     microorganismo = MicroorganismoHospital.objects.get(id=microorganismo_hospital_id)
@@ -1926,7 +1939,7 @@ def get_antibioticos(request):
     data = [{"id": a.id, "nombre": a.antibiotico.nombre} for a in antibio_qs]
     return JsonResponse(data, safe=False)
 
-
+@role_required("admin", "microbiologo")
 def get_mec_resistencia(request):
     micro_id = request.GET.get("microorganismo_id")
     microorganismo = MicroorganismoHospital.objects.get(id=micro_id)
@@ -1940,6 +1953,7 @@ def get_mec_resistencia(request):
     return JsonResponse(data, safe=False)
 
 
+@role_required("admin", "microbiologo")
 def get_sub_mecanismos(request):
     mec_id = request.GET.get("mecanismo_id")
     mecanismo = MecanismoResistenciaHospital.objects.get(id=mec_id)
