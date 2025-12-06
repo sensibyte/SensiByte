@@ -336,7 +336,7 @@ def vista_tendencias_regresion(request):
         return render(request, "Tendencias/tendencias.html", contexto)
 
     # Crear el DataFrame con los datos de tendencia
-    df = create_tendency_dataframe(datos_tendencia)
+    df = create_tendency_dataframe(datos_tendencia, modo_mecanismo=(antibiotico is None))
 
     # Si no hay datos, volver a la vista con mensaje de error
     if df.empty or df["total"].sum() == 0:
@@ -843,14 +843,14 @@ def get_mech_tendendy_data(hospital: Hospital, microorganismo: MicroorganismoHos
             "inicio": inicio,
             "fin": fin,
             "conteos": {
-                "S": con_mecanismo,  # CON mecanismo
+                "S": sin_mecanismo,  # SIN mecanismo
                 "I": 0,
-                "R": sin_mecanismo  # SIN mecanismo
+                "R": con_mecanismo, # CON mecanismo
             },
             "porcentajes": {
-                "S": porcentaje_con,  # % CON mecanismo
+                "S": porcentaje_sin,  # % SIN mecanismo
                 "I": 0,
-                "R": porcentaje_sin  # % SIN mecanismo
+                "R": porcentaje_con,  # % CON mecanismo
             },
             "total": total,
             "num_originales": total,
@@ -995,16 +995,25 @@ def count_results_with_mech(hospital: Hospital,
     }, sin_reinterpretados
 
 
-def create_tendency_dataframe(datos_tendencia: list[dict]) -> pd.DataFrame:
+def create_tendency_dataframe(datos_tendencia: list[dict], modo_mecanismo:bool=False) -> pd.DataFrame:
     """Crea pandas.DataFrame con datos de tendencia."""
     data = []
     for i, dato in enumerate(datos_tendencia):
         if dato["total"] > 0:
+            if modo_mecanismo:
+                # En modo mecanismo: graficamos RESISTENCIA (R), no sensibilidad (S+I)
+                porcentaje_graficar = dato["porcentajes"]["R"]
+                contaje_graficar = dato["conteos"]["R"]
+            else:
+                # En modo antibiótico: graficamos SENSIBILIDAD (S+I)
+                porcentaje_graficar = dato["porcentajes"]["S"] + dato["porcentajes"]["I"]
+                contaje_graficar = dato["conteos"]["S"] + dato["conteos"]["I"]
+
             data.append({
                 "periodo_num": i,
                 "periodo_label": dato["periodo"],
-                "porcentaje_si": dato["porcentajes"]["S"] + dato["porcentajes"]["I"],
-                "contaje_si": dato["conteos"]["S"] + dato["conteos"]["I"],
+                "porcentaje_si": porcentaje_graficar,
+                "contaje_si": contaje_graficar,
                 "total": dato["total"],
                 "fin": dato["fin"]
             })

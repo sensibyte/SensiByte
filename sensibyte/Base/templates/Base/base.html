@@ -206,12 +206,17 @@
                 <span class="me-1">🧫</span> Aislados
             </a>
             <div class="collapse ps-3" id="submenuAislados">
+                {% if request.user.is_authenticated and request.user.rol == "microbiologo" or request.user.rol == "tecnico" or request.user.is_superuser %}
                 <a href="{% url 'CRUD:cargar_antibiograma' %}" class="d-block">Cargar aislamientos</a>
+                {% endif %}
+                {% if request.user.is_authenticated and request.user.rol == "microbiologo" or request.user.rol == "admin" or request.user.is_superuser %}
                 <a href="{% url 'CRUD:listar_registros' %}" class="d-block">Registros aislamientos</a>
+                {% endif %}
             </div>
         </div>
 
         <!-- Grupo desplegable: Resultados -->
+        {% if request.user.is_authenticated and request.user.rol == "microbiologo" or request.user.rol == "clinico" or request.user.rol == "admin" or request.user.is_superuser %}
         <div class="mb-2">
             <a class="fw-semibold" data-bs-toggle="collapse" href="#submenuResultados" role="button"
                aria-expanded="false" aria-controls="submenuAislados">
@@ -224,9 +229,10 @@
                 <a href="{% url 'Tendencias:analisis_tendencias' %}">Análisis tendencias</a>
             </div>
         </div>
+        {% endif %}
 
         <!-- Último grupo: Administración -->
-        {% if request.user.is_authenticated and request.user.rol == "microbiologo" or request.user.is_superuser %}
+        {% if request.user.is_authenticated and request.user.rol == "microbiologo" or request.user.rol == "admin" or request.user.is_superuser %}
         <div class="mb-2">
             <a href="{% url 'admin:index' %}" class="d-block">
                 <span class="me-1">🛠️</span> Admin</a>

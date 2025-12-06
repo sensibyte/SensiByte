@@ -1,0 +1,696 @@
+{
+  "fecha": {
+    "inicio": "2022-01-01",
+    "fin": "2022-12-31"
+  },
+  "n_historia": {
+    "min": 300000,
+    "max": 999999,
+    "duplicados": 18
+  },
+  "microorganismo": {
+    "categorias": [
+      "Staphylococcus aureus",
+      "Staphylococcus aureus resistente a meticilina"
+    ],
+    "porcentajes": [
+      71.02,
+      28.98
+    ]
+  },
+  "edad": {
+    "distribucion": "weibull",
+    "parametros": {
+      "shape": 2.5,
+      "scale": 90
+    }
+  },
+  "Muestra": {
+    "categorias": [
+      "ABSCESO",
+      "ASPIRADOB",
+      "ASPIRADOT",
+      "BILIS",
+      "BLV",
+      "CONJ",
+      "CUTANEA",
+      "DRENAJE",
+      "ENDOMET",
+      "ESCARA",
+      "ESPUTO",
+      "ESPUTO2",
+      "ESPUTO3",
+      "HERIDA",
+      "HERIDAQ",
+      "HERIDAT",
+      "LSP",
+      "ORIFICIOCA",
+      "ORINA",
+      "ORINAE",
+      "ORIS",
+      "OTICO",
+      "PIEL",
+      "SANGRE",
+      "TEJIDO",
+      "UMBILICAL"
+    ],
+    "porcentajes": [
+      9.18,
+      2.03,
+      1.63,
+      0.42,
+      0.21,
+      2.05,
+      5.34,
+      0.62,
+      0.21,
+      0.62,
+      14.93,
+      0.21,
+      0.41,
+      20.77,
+      6.73,
+      0.82,
+      0.41,
+      1.83,
+      4.90,
+      0.21,
+      0.62,
+      12.64,
+      2.03,
+      6.54,
+      0.21,
+      2.08
+    ]
+  },
+  "Sexo": {
+    "categorias": [
+      "Hombre",
+      "Mujer"
+    ],
+    "porcentajes": [
+      55.50,
+      44.50
+    ]
+  },
+  "Ambito": {
+    "categorias": [
+      "ATENCION PRIMARIA",
+      "CONSULTAS EXTERNAS",
+      "HOSPITALIZACION",
+      "URGENCIAS"
+    ],
+    "porcentajes": [
+      27.80,
+      14.00,
+      23.10,
+      35.10
+    ]
+  },
+  "Servicio": {
+    "categorias": [
+      "ADMISION",
+      "ALERGOLOGÍA",
+      "ANGIOLOGIA Y CIRUGÍA VASCULAR",
+      "ATENCION PRIMARIA",
+      "CARDIOLOGÍA",
+      "CIRUGÍA GENERAL Y DIGESTIVA",
+      "CIRUGÍA MAXILOFACIAL",
+      "CIRUGÍA PLASTICA",
+      "DERMATOLOGÍA",
+      "GERIATRÍA",
+      "GINECOLOGÍA",
+      "HEMATOLOGÍA CLÍNICA",
+      "HEMODIALISIS",
+      "MEDICINA INTERNA",
+      "MEDICINA INTERNA CONSULTAS EXT",
+      "MICROBIOLOGIA",
+      "NEFROLOGÍA",
+      "NEONATOLOGÍA",
+      "NEUMOLOGÍA",
+      "NEUMOLOGIA CONSULTAS EXTERNAS",
+      "NEUROLOGÍA",
+      "OBSTETRICIA",
+      "OFTALMOLOGÍA",
+      "OFTALMOLOGIA HOSPITAL CONSULTA",
+      "ONCOLOGÍA MÉDICA",
+      "OTORRINOLARINGOLOGÍA",
+      "PEDIATRÍA",
+      "REHABILITACIÓN",
+      "TRAUMATOLOGÍA",
+      "UNIDAD DE CUIDADOS INTENSIVOS",
+      "URGENCIAS ENFERMERIA",
+      "UROLOGÍA"
+    ],
+    "porcentajes": [
+      0.20,
+      0.21,
+      2.29,
+      26.42,
+      1.04,
+      9.12,
+      0.22,
+      0.20,
+      5.79,
+      3.93,
+      1.45,
+      0.83,
+      0.62,
+      6.43,
+      0.21,
+      0.21,
+      1.86,
+      0.21,
+      3.73,
+      0.41,
+      0.62,
+      0.62,
+      0.41,
+      0.21,
+      3.52,
+      2.07,
+      4.97,
+      0.21,
+      4.35,
+      1.86,
+      14.70,
+      1.04
+    ]
+  },
+  "Comentarios": {
+    "categorias": [
+      "",
+      "S.aureus resistente a meticilina (se detecta PBP2a). El resultado se confirmará por antibiograma tradicional$$",
+      "S.aureus resistente a meticilina (se detecta PBP2a)."
+    ],
+    "porcentajes": [
+      97.79,
+      1.11,
+      1.10
+    ]
+  },
+  "antibioticos": [
+    {
+      "nombres": [
+        "Penicilina"
+      ],
+      "probabilidades": {
+        "blanco": 11.34,
+        "R": 78.69,
+        "S": 9.97
+      },
+      "valores_cmi": {
+        "R": {
+          "valores": [
+            "0.25",
+            "8",
+            "<=0.12",
+            ">=0.5",
+            ">0.25",
+            ">8",
+            ""
+          ],
+          "probabilidades": [
+            0.82,
+            15.57,
+            2.05,
+            5.74,
+            2.46,
+            48.36,
+            3.69
+          ]
+        },
+        "S": {
+          "valores": [
+            "0.06",
+            "<=0.03",
+            "<=0.12",
+            ""
+          ],
+          "probabilidades": [
+            1.23,
+            0.82,
+            7.38,
+            0.82
+          ]
+        }
+      }
+    },
+    {
+      "nombres": [
+        "Cloxacilina",
+        "Cloxacilina/Meticilina",
+        "Deteccion de Cefoxitina",
+        "Screening de Cefoxitina",
+        "Cefoxitina"
+      ],
+      "probabilidades": {
+        "blanco": 1.17,
+        "R": 24.06,
+        "S": 74.77
+      },
+      "valores_cmi": {
+        "R": {
+          "valores": [
+            ">4",
+            ">=4",
+            "p"
+          ],
+          "probabilidades": [
+            15.36,
+            21.38,
+            37.86
+          ]
+        },
+        "S": {
+          "valores": [
+            "<=4",
+            "0.5",
+            "<=0.25",
+            "n",
+            ""
+          ],
+          "probabilidades": [
+            73.94,
+            1.99,
+            4.71,
+            23.53,
+            1.05
+          ]
+        }
+      }
+    },
+    {
+      "nombres": [
+        "Levofloxacino"
+      ],
+      "probabilidades": {
+        "blanco": 0.0,
+        "R": 16.35,
+        "I": 83.65
+      },
+      "valores_cmi": {
+        "R": {
+          "valores": [
+            "4",
+            ">=8",
+            ">4",
+            ""
+          ],
+          "probabilidades": [
+            1.01,
+            2.67,
+            13.57,
+            1.33
+          ]
+        },
+        "I": {
+          "valores": [
+            "<=1",
+            "0.25",
+            "0.5",
+            "<=0.12",
+            ""
+          ],
+          "probabilidades": [
+            60.79,
+            1.27,
+            15.61,
+            3.22,
+            20.10
+          ]
+        }
+      }
+    },
+    {
+      "nombres": [
+        "Clindamicina",
+        "Inducci¢n Clindamicina",
+        "Resistencia Inducible a Clindamicina"
+      ],
+      "probabilidades": {
+        "blanco": 3.34,
+        "R": 28.29,
+        "S": 68.37
+      },
+      "valores_cmi": {
+        "R": {
+          "valores": [
+            "0.25",
+            "0.5",
+            "1",
+            "<=0.12",
+            "<=0.25",
+            ">=2",
+            "p",
+            ""
+          ],
+          "probabilidades": [
+            2.86,
+            41.43,
+            1.43,
+            2.86,
+            25.71,
+            14.29,
+            5.20,
+            6.23
+          ]
+        },
+        "S": {
+          "valores": [
+            "0.25",
+            "<=0.12",
+            "<=0.25",
+            "n",
+            ""
+          ],
+          "probabilidades": [
+            7.27,
+            7.87,
+            75.15,
+            4.20,
+            5.51
+          ]
+        }
+      }
+    },
+    {
+      "nombres": [
+        "Eritromicina"
+      ],
+      "probabilidades": {
+        "blanco": 0.02,
+        "R": 36.73,
+        "S": 63.25
+      },
+      "valores_cmi": {
+        "R": {
+          "valores": [
+            "2",
+            "4",
+            ">=8",
+            ">4",
+            ""
+          ],
+          "probabilidades": [
+            2.22,
+            1.11,
+            6.67,
+            77.78,
+            12.22
+          ]
+        },
+        "S": {
+          "valores": [
+            "0.5",
+            "1",
+            "<=0.5",
+            ""
+          ],
+          "probabilidades": [
+            2.58,
+            6.45,
+            78.84,
+            16.13
+          ]
+        }
+      }
+    },
+    {
+      "nombres": [
+        "Gentamicina"
+      ],
+      "probabilidades": {
+        "blanco": 1.07,
+        "R": 6.07,
+        "S": 92.86
+      },
+      "valores_cmi": {
+        "R": {
+          "valores": [
+            "4",
+            "8",
+            ">4",
+            ">8",
+            ""
+          ],
+          "probabilidades": [
+            11.76,
+            5.88,
+            5.88,
+            70.59,
+            5.88
+          ]
+        },
+        "S": {
+          "valores": [
+            "2",
+            "<=0.5",
+            "<=1",
+            ""
+          ],
+          "probabilidades": [
+            3.96,
+            7.93,
+            73.13,
+            14.98
+          ]
+        }
+      }
+    },
+    {
+      "nombres": [
+        "Cotrimoxazol (Trimetoprim/Sulfametoxazol)",
+        "Trimetoprim/Sulfametoxazol"
+      ],
+      "probabilidades": {
+        "blanco": 3.79,
+        "R": 33.01,
+        "S": 63.2,
+        "I": 0
+      },
+      "valores_cmi": {
+        "I": {
+          "valores": [
+            "27851"
+          ],
+          "probabilidades": [
+            100.0
+          ]
+        },
+        "R": {
+          "valores": [
+            ">4/76",
+            ""
+          ],
+          "probabilidades": [
+            5.05,
+            5.05
+          ]
+        },
+        "S": {
+          "valores": [
+            "<=1/19",
+            "<=2/38",
+            ""
+          ],
+          "probabilidades": [
+            4.60,
+            91.49,
+            5.10
+          ]
+        }
+      }
+    },
+    {
+      "nombres": [
+        "Vancomicina"
+      ],
+      "probabilidades": {
+        "S": 100.0
+      },
+      "valores_cmi": {
+        "S": {
+          "valores": [
+            "0.5",
+            "1",
+            "2",
+            "<=0.5",
+            "<=0.25",
+            ""
+          ],
+          "probabilidades": [
+            0.41,
+            55.51,
+            26.94,
+            2.45,
+            0.41,
+            14.29
+          ]
+        }
+      }
+    },
+    {
+      "nombres": [
+        "Tetraciclina"
+      ],
+      "probabilidades": {
+        "blanco": 16.54,
+        "R": 10.84,
+        "S": 72.62
+      },
+      "valores_cmi": {
+        "R": {
+          "valores": [
+            "2",
+            "4",
+            "8",
+            ">2",
+            ">8"
+          ],
+          "probabilidades": [
+            9.09,
+            4.55,
+            27.27,
+            4.55,
+            54.55
+          ]
+        },
+        "S": {
+          "valores": [
+            "<=1",
+            ""
+          ],
+          "probabilidades": [
+            93.89,
+            6.11
+          ]
+        }
+      }
+    },
+    {
+      "nombres": [
+        "Linezolid"
+      ],
+      "probabilidades": {
+        "blanco": 3.16,
+        "S": 96.84
+      },
+      "valores_cmi": {
+        "S": {
+          "valores": [
+            "1",
+            "2",
+            "4",
+            "<=1",
+            ""
+          ],
+          "probabilidades": [
+            1.90,
+            60.48,
+            29.05,
+            8.10,
+            0.48
+          ]
+        }
+      }
+    },
+    {
+      "nombres": [
+        "Daptomicina"
+      ],
+      "probabilidades": {
+        "blanco": 2.52,
+        "S": 97.48
+      },
+      "valores_cmi": {
+        "S": {
+          "valores": [
+            "0.25",
+            "0.5",
+            "1",
+            "<=0.5",
+            "<=1"
+          ],
+          "probabilidades": [
+            6.28,
+            1.93,
+            0.48,
+            4.35,
+            86.96
+          ]
+        }
+      }
+    },
+    {
+      "nombres": [
+        "Ceftarolina"
+      ],
+      "probabilidades": {
+        "blanco": 2.0,
+        "R": 1.48,
+        "S": 96.52
+      },
+      "valores_cmi": {
+        "R": {
+          "valores": [
+            ">1"
+          ],
+          "probabilidades": [
+            100.0
+          ]
+        },
+        "S": {
+          "valores": [
+            "0.12",
+            "0.25",
+            "0.5",
+            "1",
+            "<=0.06",
+            "<=0.5"
+          ],
+          "probabilidades": [
+            2.03,
+            3.05,
+            2.03,
+            10.66,
+            1.52,
+            80.02
+          ]
+        }
+      }
+    },
+    {
+      "nombres": [
+        "Mupirocina"
+      ],
+      "probabilidades": {
+        "blanco": 2.10,
+        "R": 2.87,
+        "S": 95.03
+      },
+      "valores_cmi": {
+        "R": {
+          "valores": [
+            ">256"
+          ],
+          "probabilidades": [
+            100.0
+          ]
+        },
+        "S": {
+          "valores": [
+            "<=1",
+            "<=256",
+            "<=4"
+          ],
+          "probabilidades": [
+            8.91,
+            87.13,
+            3.96
+          ]
+        }
+      }
+    }
+  ]
+}

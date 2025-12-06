@@ -267,5 +267,10 @@
     "incluye": ["Campylobacter jejuni and C. coli"],
     "excluye": [],
     "descripcion": "Campylobacter jejuni y C. coli"
+  },{
+    "scope": "especie",
+    "incluye": ["Staphylooccus aureus"],
+    "excluye": [],
+    "descripcion": "Sólo S. aureus"
   }
 ]

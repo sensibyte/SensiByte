@@ -187,18 +187,17 @@ def generar_antibiogramas(config_json: dict, n_registros: int, seed=123) -> pd.D
         if col.endswith("_CMI"):  # si la columna acaba en _CMI contiene esos valores
             df[col] = df[col].apply(  # aplicamos una función anónima
                 lambda v: (
-                    v if pd.isna(v)  # si el valor es nulo, no hacemos nada
-                    else v if isinstance(v, numbers.Number)  # si es numérico, no hacemos nada, ya es numérico
-                    else ( # si no es nulo ni numérico será cadena de texto
-                        v.strip() # devolvemos la cadena de texto con espacios recortados
-                        # si esa cadena recortada es una cadena vacía o contiene algún símbolo mayor, menor o igual
-                        if (v.strip() == "" or any(s in v for s in ["/", ">", "<", "=", "≥", "≤"]))
-                        # y si no se cumple esa condición se devuelve un entero o un float dependiendo de cómo esté
-                        # formateada la cadena de texto para el numérico
+                    v if pd.isna(v)
+                    else v if isinstance(v, numbers.Number)
+                    else (lambda s: (
+                        s if s == "" or any(sym in s for sym in ["/", ">", "<", "=", "≥", "≤"])
                         else (
-                            int(v.strip()) if "." not in v.strip() else float(v.strip())
+                            # conversiones a numérico si se puede
+                            (lambda: int(s) if "." not in s else float(s))()
+                            if s.replace(".", "", 1).isdigit()
+                            else s  # si no es numérico, devolver str sin error (ej. "p" para inferencias por positivos)
                         )
-                    )
+                    ))(v.strip())
                 )
             )
 
