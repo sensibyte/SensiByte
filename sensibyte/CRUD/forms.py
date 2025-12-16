@@ -184,12 +184,15 @@ class MecanismoResistenciaForm(forms.ModelForm):
 
         if aislado:
             hospital = getattr(aislado.registro, "hospital", None) # extraemos el hospital del Registro del Aislado
+            grupo_eucast = getattr(aislado.microorganismo.microorganismo,
+                                   "grupo_eucast", None) # extraemos el grupo EUCAST para filtrar los posibles mecanismos
             if hospital:
+
                 # Solo mostrar mecanismos del hospital
                 fields["mecanismos_resistencia"].queryset = MecanismoResistenciaHospital.objects.filter(
-                    hospital=hospital
+                    hospital=hospital, mecanismo__grupos_eucast=grupo_eucast
                 )
                 # Subtipos que pertenecen a los mecanismos del hospital
                 fields["subtipos_resistencia"].queryset = SubtipoMecanismoResistenciaHospital.objects.filter(
-                    hospital=hospital
+                    hospital=hospital, subtipo_mecanismo__mecanismo__grupos_eucast=grupo_eucast
                 )
