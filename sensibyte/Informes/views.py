@@ -2754,15 +2754,17 @@ class InformePredefinidoResistenciaPDFView(FormView):
         """Crea página con leyenda de colores"""
         estilo_titulo = estilos["Heading1"]
         estilo_normal = estilos["Normal"]
-        elementos: list[Paragraph | Spacer | Table] = [Paragraph("Leyenda de colores", estilo_titulo),
+        elementos: list[Paragraph | Spacer | Table] = [Paragraph("Leyenda", estilo_titulo),
                                                        Spacer(1, 12)]
 
         data = [
             ["", ">85% de las cepas sensibles"],
             ["", "50-85% de las cepas sensibles"],
-            ["", "<50% de las cepas sensibles"]
+            ["", "<50% de las cepas sensibles"],
+            ["↑", "Aumento significativo de la sensibilidad con respecto al periodo anterior, con un nivel de confianza del 95 %"],
+            ["↓", "Disminución significativa de la sensibilidad con respecto al periodo anterior, con un nivel de confianza del 95 %"],
         ]
-        col_widths = [2 * cm, 12 * cm]
+        col_widths = [2 * cm, 23 * cm]
         tabla_leyenda = Table(data, colWidths=col_widths)
         estilos_tabla = [
             ("BACKGROUND", (0, 0), (0, 0), self.verde),
