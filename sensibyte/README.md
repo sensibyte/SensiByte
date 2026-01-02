@@ -1,8 +1,7 @@
 <p>
-  <img src="static/img/logo_sensibyte_red.png" alt="Logo SensiByte" width="120">
-</p>
+  <img src="static/img/logo.png" alt="Logo SensiByte" height="65">
+</p> 
 
-# SensiByte
 ![Python](https://img.shields.io/badge/Python-3.13-blue)
 ![Django](https://img.shields.io/badge/Django-5.2.8-green)
 ![Status](https://img.shields.io/badge/status-TFM-success)
