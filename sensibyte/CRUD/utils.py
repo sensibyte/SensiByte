@@ -11,9 +11,11 @@ import unicodedata
 from Base.models import MecanismoResistenciaHospital, SubtipoMecanismoResistenciaHospital, \
     MecResValoresPositivosHospital
 
+from django.conf import settings
+
 # Cargamos las salt desde variables de entorno
-SALT_PRE = os.environ.get("HASH_SALT_PRE")
-SALT_POST = os.environ.get("HASH_SALT_POST")
+SALT_PRE = settings.HASH_SALT_PRE
+SALT_POST = settings.HASH_SALT_POST
 
 NEGACIONES = ["no", "ausencia", "sin", "negativo", "no se detecta"]
 SEPARADORES = re.compile(r"[.;$]+") # detecta uno o más caracteres de tipo: "." , ";" o "$"
