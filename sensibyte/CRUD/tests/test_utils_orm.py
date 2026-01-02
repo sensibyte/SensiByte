@@ -1232,10 +1232,11 @@ class TestGetArm:
         row = pd.Series({'dato': 'valor'})
         mapping = {}
         resultados_procesados = {1: ('S', 2.0, 20.0)}
+        microorganismo_file = "escherichia coli"
 
         with patch('CRUD.views.detect_arm', return_value=(set(), set())):
             mec_det, sub_det, resultados_finales = CargarAntibiogramaView._get_arm(
-                row, mapping, resultados_procesados, [], [], []
+                row, mapping, resultados_procesados, [], [], [], microorganismo_file
             )
 
         assert len(mec_det) == 0 # no hay ni mecanismos ni subtipos de mecanismos
@@ -1254,10 +1255,11 @@ class TestGetArm:
         row = pd.Series({'blee': 'positivo'})
         mapping = {}
         resultados_procesados = {antibiotico.id: ('S', 2.0, 20.0)} # los resultados dicen 'S'
+        microorganismo_file = "escherichia coli"
 
         with patch('CRUD.views.detect_arm', return_value=({mec}, set())):
             mec_det, sub_det, resultados_finales = CargarAntibiogramaView._get_arm(
-                row, mapping, resultados_procesados, [mec], [], []
+                row, mapping, resultados_procesados, [mec], [], [], microorganismo_file
             )
 
         # Debe cambiar de S a R
@@ -1276,10 +1278,11 @@ class TestGetArm:
         row = pd.Series({'blee': 'positivo'})
         mapping = {}
         resultados_procesados = {antibiotico.id: ('R', 16.0, 10.0)}
+        microorganismo_file = "escherichia coli"
 
         with patch('CRUD.views.detect_arm', return_value=({mec}, set())):
             mec_det, sub_det, resultados_finales = CargarAntibiogramaView._get_arm(
-                row, mapping, resultados_procesados, [mec], [], []
+                row, mapping, resultados_procesados, [mec], [], [], microorganismo_file
             )
 
         # Debe permanecer como R
@@ -1296,10 +1299,11 @@ class TestGetArm:
         row = pd.Series({'blee': 'positivo'})
         mapping = {}
         resultados_procesados = {antibiotico.id: ('ND', None, None)}
+        microorganismo_file = "escherichia coli"
 
         with patch('CRUD.views.detect_arm', return_value=({mec}, set())):
             mec_det, sub_det, resultados_finales = CargarAntibiogramaView._get_arm(
-                row, mapping, resultados_procesados, [mec], [], []
+                row, mapping, resultados_procesados, [mec], [], [], microorganismo_file
             )
 
         # Debe permanecer como ND
