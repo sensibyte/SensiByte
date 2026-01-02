@@ -1,6 +1,6 @@
 # SensiByte
-![Python](https://img.shields.io/badge/Python-3.10-blue)
-![Django](https://img.shields.io/badge/Django-4.x-green)
+![Python](https://img.shields.io/badge/Python-3.13-blue)
+![Django](https://img.shields.io/badge/Django-5.2.8-green)
 ![Status](https://img.shields.io/badge/status-TFM-success)
 ![Reproducibility](https://img.shields.io/badge/reproducibility-yes-brightgreen)
 ![License](https://img.shields.io/badge/license-CC%20BY--NC--ND%203.0-lightgrey)
