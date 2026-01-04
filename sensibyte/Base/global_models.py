@@ -169,7 +169,7 @@ class Antibiotico(models.Model):
         ("endme", "Endocarditis y meningitis"),
         ("otrnm", "Otras indicaciones no meningitis"),
         ("otnem", "Otras indicaciones no endocarditis y meningitis"),
-        ("otrnm", "Otras indicaciones no neumonía"),
+        ("onneu", "Otras indicaciones no neumonía"),
         ("sitem", "Infección sistémica"),
         ("otras", "Otras indicaciones"),
     ]
