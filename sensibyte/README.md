@@ -2,6 +2,7 @@
   <img src="static/img/logo.png" alt="SensiByte Logo" height="65">
 </p>
 
+[![DOI](https://zenodo.org/badge/1079239215.svg)](https://doi.org/10.5281/zenodo.20124749)
 ![Python](https://img.shields.io/badge/Python-3.13-blue)
 ![Django](https://img.shields.io/badge/Django-5.2.8-green)
 ![Status](https://img.shields.io/badge/status-Master's%20Thesis-success)
