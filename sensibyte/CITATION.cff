@@ -1,0 +1,40 @@
+cff-version: 1.2.0
+title: "SensiByte"
+message: "If you use this software, please cite it as follows."
+type: software
+
+authors:
+  - family-names: "Martínez López"
+    given-names: "Jesús"
+
+abstract: >
+  SensiByte is a Django-based web application for the management,
+  analysis, visualization, and automated reporting of antimicrobial
+  susceptibility data following COESANT recommendations and CLSI M39 guidelines.
+
+keywords:
+  - antimicrobial resistance
+  - antibiogram
+  - AMR
+  - Django
+  - epidemiology
+  - surveillance
+  - CLSI M39
+  - COESANT
+
+license: "CC-BY-NC-ND-3.0"
+
+version: "1.0.0"
+
+repository-code: "https://github.com/sensibyte/SensiByte"
+
+url: "https://github.com/sensibyte/SensiByte"
+
+preferred-citation:
+  type: software
+  authors:
+    - family-names: "Martínez López"
+      given-names: "Jesús"
+  title: "SensiByte"
+  version: "1.0.0"
+  year: 2026

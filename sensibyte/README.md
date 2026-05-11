@@ -1,98 +1,95 @@
 <p>
-  <img src="static/img/logo.png" alt="Logo SensiByte" height="65">
-</p> 
+  <img src="static/img/logo.png" alt="SensiByte Logo" height="65">
+</p>
 
 ![Python](https://img.shields.io/badge/Python-3.13-blue)
 ![Django](https://img.shields.io/badge/Django-5.2.8-green)
-![Status](https://img.shields.io/badge/status-TFM-success)
+![Status](https://img.shields.io/badge/status-Master's%20Thesis-success)
 ![Reproducibility](https://img.shields.io/badge/reproducibility-yes-brightgreen)
-![License](https://img.shields.io/badge/license-CC%20BY--NC--ND%203.0-lightgrey)
+![License](https://img.shields.io/badge/license-CC_BY--NC--ND_4.0-lightgrey)
 
+SensiByte is a Django-based web application designed for the management,
+analysis, and automated reporting of antimicrobial susceptibility data,
+following COESANT recommendations and the CLSI M39 standard.
 
-SensiByte es una aplicación web desarrollada en Django para la gestión,
-análisis y generación automática de informes de sensibilidad antimicrobiana,
-alineada con las recomendaciones del COESANT y el estándar CLSI M39.
+## Background
 
-## Contexto
+Antimicrobial resistance is a critical public health issue.
+Cumulative antibiogram reports are an essential tool for antimicrobial
+stewardship programs, although their manual generation is often time-consuming,
+poorly reproducible, and dependent on proprietary laboratory information systems.
 
-La resistencia antimicrobiana es un problema crítico de salud pública.
-Los informes de antibiograma acumulado son una herramienta esencial
-para los programas PROA, pero su elaboración manual es costosa,
-poco reproducible y dependiente de herramientas cerradas de los SIL.
+## Architecture
 
-## Arquitectura
+- Framework: Django (Model–View–Template architecture)
+- Programming language: Python
+- Database: SQL (synthetic data)
+- Visualization: Plotly
+- Reporting: PDF generation with ReportLab
+- Security: authentication, authorization, and data anonymization
 
-- Framework: Django (Modelo–Vista–Template)
-- Lenguaje: Python
-- Base de datos: SQL (datos sintéticos)
-- Visualización: Plotly
-- Informes: PDF (ReportLab)
-- Seguridad: autenticación, permisos y anonimización
+## Workflow
 
-## Flujo de trabajo
+1. Import of laboratory information system data
+2. Automatic anonymization of identifiers
+3. Data processing according to COESANT / CLSI M39 recommendations
+4. Generation of cumulative antimicrobial susceptibility reports
+5. Temporal trend analysis and data visualization
 
-1. Importación de datos desde el SIL
-2. Anonimización automática de identificadores
-3. Procesamiento según recomendaciones COESANT / CLSI M39
-4. Generación de informes de sensibilidad acumulada
-5. Análisis temporal y visualización de tendencias
+## Reproducibility
 
-## Reproducibilidad
+This project was developed following reproducibility principles:
 
-Este proyecto ha sido diseñado siguiendo principios de reproducibilidad:
+- Use of synthetic datasets included in the repository
+- Controlled dependencies through `requirements.txt`
+- Clear separation between business logic, data, and visualization layers
+- Deterministic data processing
+- Automated report generation from identical input data
 
-- Uso de datos sintéticos incluidos en el repositorio
-- Dependencias controladas mediante `requirements.txt`
-- Separación clara entre lógica de negocio, datos y visualización
-- Procesamiento determinista de los datos
-- Generación automática de informes a partir de los mismos inputs
+Any user can clone the repository and reproduce the results
+by following the installation steps described below.
 
-Cualquier usuario puede clonar el repositorio y reproducir los resultados
-siguiendo los pasos de instalación descritos.
+## Ethical Considerations
 
-## Consideraciones éticas
+- The project does not contain real clinical data
+- All included datasets are synthetic
+- The system architecture is designed to support compliance with
+  data protection regulations in real-world environments
 
-- El proyecto no contiene datos clínicos reales
-- Los datos utilizados son sintéticos
-- La arquitectura está preparada para cumplir con normativas
-  de protección de datos en entornos reales
+## Installation Notes
 
-## Notas de instalación
-
-El repositorio está listo para clonar. Sin embargo, ha de crearse un archivo `.env`
-en la raíz del sistema con la siguiente información:
+The repository is ready to clone. However, a `.env` file must be created
+at the project root containing the following variables:
 
 ```{txt}
-SECRET_KEY={Tu clave secreta}
+SECRET_KEY={your_secret_key}
 DEBUG={True/False}
-HASH_SALT_PRE={SALT PRE}
-HASH_SALT_POST={SALT POST}
+HASH_SALT_PRE={PRE_SALT}
+HASH_SALT_POST={POST_SALT}
 ```
-donde:
 
-- `SECRET_KEY`: es una cadena de texto con la clave secreta.
-- `DEBUG`: es una variable `boolean` que determina si accedemos en modo DEBUG (`True`) o PRODUCCIÓN (`False`).
-- `HASH_SALT_PRE`: es una cadena de texto con la SALT PRE
-- `HASH_SALT_POST`: es una cadena de texto con la SALT POST
+Where:
 
-Una vez configurado, desde la carpeta con `manage.py` iniciamos el servidor:
+- `SECRET_KEY`: secret key string used by Django.
+- `DEBUG`: boolean variable indicating DEBUG (True) or PRODUCTION (False) mode.
+- `HASH_SALT_PRE`: string containing the pre-hash salt.
+- `HASH_SALT_POST`: string containing the post-hash salt.
+
+Once configured, start the development server from the directory containing manage.py:
 
 ```{sh}
 python manage.py runserver
 ```
-Listo
 
-## Licencia
+Done.
 
-Esta obra está sujeta a una licencia de  
-**Reconocimiento–NoComercial–SinObraDerivada 3.0 España (CC BY-NC-ND 3.0 ES)**  
-de Creative Commons.
+## License
 
-© Jesús Martínez López
+This work is licensed under the
+Creative Commons Attribution–NonCommercial–NoDerivatives 4.0 International License (CC BY-NC-ND 4.0).
 
-Reservados todos los derechos.  
-Queda prohibida la reproducción total o parcial de esta obra por cualquier
-medio o procedimiento, comprendidos la impresión, la reprografía, el microfilme,
-el tratamiento informático o cualquier otro sistema, así como la distribución de
-ejemplares mediante alquiler o préstamo, sin la autorización escrita del autor o
-dentro de los límites que autorice la Ley de Propiedad Intelectual.
+© 2026 Jesús Martínez López
+
+You may copy and redistribute the material in any medium or format
+for non-commercial purposes only, provided that appropriate credit is given.
+Distribution of modified versions is not permitted.
