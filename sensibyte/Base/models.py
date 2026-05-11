@@ -113,7 +113,7 @@ class PerfilAntibiogramaHospital(models.Model):
         verbose_name_plural = "3. Perfiles de antibiograma"
 
     def __str__(self):  # Mediante esta construcción podemos ver el Hospital y Grupo Eucast al que pertenece el perfil
-        return f"Perfil EUCAST de {self.hospital.codigo} para {self.grupo_eucast.nombre}"
+        return f"Perfil EUCAST de {self.hospital.nombre} para {self.grupo_eucast.nombre}"
 
 
 # Modelo PerfilAntibioticoHospital
@@ -301,6 +301,14 @@ class MecResValoresPositivosHospital(AliasMixin, models.Model):
     class Meta:
         verbose_name = "Alias valor positivo Mecanismo de Resistencia"
         verbose_name_plural = "12. Alias valores positivos Mecanismo de Resistencia"
+
+
+
+
+
+
+
+
 
 
 # Modelo Registro

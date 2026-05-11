@@ -60,6 +60,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'csp.middleware.CSPMiddleware'
 ]
 
 ROOT_URLCONF = 'sensibyte.urls'
@@ -145,3 +146,52 @@ AUTH_USER_MODEL = 'Base.Usuario'
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/login/'
 LOGOUT_REDIRECT_URL = '/login/'
+
+# Cookies
+
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+
+# Cabeceras de protección del navegador
+
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
+
+
+# CSP (Content Security Policy)
+# Requiere: pip install django-csp
+# Y añadir 'csp.middleware.CSPMiddleware' en MIDDLEWARE
+
+# django-csp >= 4.0
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "default-src": ["'self'"],
+        # Se añade 'code.jquery.com' y 'unsafe-inline' para tus scripts internos
+        "script-src": [
+            "'self'",
+            "cdn.jsdelivr.net",
+            "code.jquery.com",
+            "cdn.plot.ly",
+            "'unsafe-inline'"
+        ],
+        # Se añade 'unsafe-inline' para los estilos internos y atributos style=""
+        "style-src": [
+            "'self'",
+            "cdn.jsdelivr.net",
+            "fonts.googleapis.com",
+            "'unsafe-inline'"
+        ],
+        "img-src": ["'self'", "data:"],
+        # Se añade 'cdn.jsdelivr.net' porque ahí están los archivos de fuentes de Bootstrap
+        "font-src": ["'self'", "fonts.gstatic.com", "cdn.jsdelivr.net"],
+        # Se añade 'connect-src' para permitir la carga de mapas de Bootstrap (.map)
+        "connect-src": ["'self'", "cdn.jsdelivr.net", "cdn.plot.ly"],
+        "frame-ancestors": ["'none'"],
+        "form-action": ["'self'"],
+    }
+}
+

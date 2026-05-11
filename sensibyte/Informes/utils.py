@@ -83,7 +83,7 @@ def build_antibiotics_bar_chart(antibioticos: list[str],
     )
 
     # Exportar como HTML embebible -> incluye el cdn de Plotly
-    return plot(fig, output_type="div", include_plotlyjs="cdn")
+    return plot(fig, output_type="div", include_plotlyjs=False)
 
 def build_piechart(datos, titulo):
     """Genera piechart a partir de datos ya procesados"""

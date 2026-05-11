@@ -75,6 +75,29 @@
     "descripcion": "E. coli, Citrobacter spp, Klebsiella spp, Raoultella spp, Enterobacter spp y P. mirabilis"
   },
   {
+    "scope": "grupo",
+    "incluye": [
+      "Escherichia coli",
+      "Citrobacter",
+      "Klebsiella",
+      "Raoultella",
+      "Enterobacter",
+      "Proteus mirabilis"
+    ],
+    "excluye": [
+      "Serratia"
+    ],
+    "descripcion": "Enterobacterales excepto Serratia spp"
+  },
+  {
+    "scope": "genero",
+    "incluye": [
+      "Serratia"
+    ],
+    "excluye": [],
+    "descripcion": "Serratia spp"
+  },
+  {
     "scope": "familia",
     "incluye": [
       "Morganellaceae"
@@ -214,6 +237,20 @@
     ],
     "excluye": [],
     "descripcion": "S. epidermidis y S. lugdunensis"
+  },{
+    "scope": "especie",
+    "incluye": [
+      "Staphylococcus aureus",
+      "Staphylococcus haemolyticus",
+      "Staphylococcus capitis",
+      "Staphylococcus hominis",
+      "Staphylococcus caprae",
+      "Staphylococcus warneri",
+      "Staphylococcus xylosus"
+
+    ],
+    "excluye": [],
+    "descripcion": "S. aureus y coagulasa negativos excepto S. epidermidis y S. lugdunensis"
   },{
     "scope": "especie",
     "incluye": [

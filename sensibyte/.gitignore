@@ -1,0 +1,43 @@
+# Entornos
+venv/
+.env/
+.env.*
+
+# Django
+db.sqlite3
+db2.sqlite3
+media/
+static/
+
+# IDE
+ccc/
+BBDD/
+
+# Migrations
+frontend/
+backend/
+BackgroundCanvas.tsx
+clases_limpias.json
+docker-compose.yaml
+logo_sensibyte.png
+MIGRATION_FASTAPI_NEXTJS.md
+
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Tendencias old
+Tendencias.zip
+/Tendencias/.env.secrets
+/Tendencias/ai_recommendations.py
+/Tendencias/views_.py
+/Tendencias/templates/tendencias_.html
+/Tendencias/templates/Tendencias/tendencias_.html
+/Tendencias/pruebas.py
+
+.env
+
+Base.zip
+
+

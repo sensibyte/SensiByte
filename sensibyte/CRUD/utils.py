@@ -8,6 +8,7 @@ import pandas
 import pandas as pd
 import unicodedata
 
+from Base.global_models import GrupoEucast
 from Base.models import MecanismoResistenciaHospital, SubtipoMecanismoResistenciaHospital, \
     MecResValoresPositivosHospital
 
@@ -479,130 +480,130 @@ def parse_halo(valor: str) -> float | None:
 
     return None  # si no hay otra forma de parsearlo devolver None
 
-
-def detect_arm(row: pandas.Series, mapping: dict, mecanismos: list[MecanismoResistenciaHospital],
-               subtipos: list[SubtipoMecanismoResistenciaHospital], pos_vals: list[MecResValoresPositivosHospital]) \
-        -> tuple[set[MecanismoResistenciaHospital], set[SubtipoMecanismoResistenciaHospital]]:
-    """Infiere si existe algún mecanismo o subtipo de mecanismo de resistencia en base a:
-    - Columnas específicas del DataFrame
-    - Columna de Observaciones / Comentarios
-    Devuelve una tupla con dos sets:
-    - mecanismos_detectados: conjunto de objetos MecanismoResistenciaHospital detectados
-    - subtipos_detectados: conjunto de objetos de MecResValoresPositivosHospital detectados
+def detect_arm(
+    row: pandas.Series,
+    mapping: dict,
+    grupo_eucast: GrupoEucast,
+    mecanismos,
+    subtipos,
+    pos_vals
+) -> tuple[set[MecanismoResistenciaHospital], set[SubtipoMecanismoResistenciaHospital]]:
     """
-    # Inicializamos sets de almacenamiento
+    Infiere si existe algún mecanismo o subtipo de mecanismo de resistencia en base a:
+        - Columnas específicas del DataFrame
+        - Columna de Observaciones / Comentarios
+        Devuelve una tupla con dos sets:
+        - mecanismos_detectados: conjunto de objetos MecanismoResistenciaHospital detectados
+        - subtipos_detectados: conjunto de objetos de MecResValoresPositivosHospital detectados
+    """
+
     mecanismos_detectados = set()
     subtipos_detectados = set()
 
-    pos_vals = [normalize_text(a) for obj in pos_vals for a in obj.alias]  # obtenemos la lista de alias de valores de
-    # mecanismo detectado
 
-    # diccionario auxiliar para vincular id de mecanismo base con su objeto hospitalario
-    mec_map = {m.mecanismo.id: m for m in mecanismos}
+    # 1. Normalización inicial
+    pos_vals_norm = {normalize_text(a) for obj in pos_vals for a in obj.alias}
 
-    # 1. Detección por columnas específicas
-    # recorremos los objetos de MecanismoResistenciaHospital del diccionario
-    for m in mecanismos:
-        # creamos un set de cadenas de texto de alias con el operador |
-        mecs = {normalize_text(m.mecanismo.nombre)} | {normalize_text(a) for a in m.alias}
+    cols_norm = {col: normalize_text(col) for col in row.index}
 
-        # recorremos por cada uno de los alias del set
-        for mec in mecs:
-            # recorremos las columnas de la fila
-            for col in row.index:
+    # 2. Filtrado por EUCAST
+    mecanismos_filtrados = [
+        m for m in mecanismos
+        if any(g.id == grupo_eucast.id for g in m.mecanismo.grupos_eucast.all())
+    ]
 
-                # si encontramos el alias en una de las columnas de la fila en cuestión
-                if mec in normalize_text(col):
-                    valor = normalize_text(str(row[col]))  # el valor será el de esa columna
-                    print(f"Columna: {col}, valor: '{row[col]}'")  # log a consola de la columna y valor encontrados
+    # mapa id mecanismo base -> objeto hospitalario
+    mec_map = {m.mecanismo.id: m for m in mecanismos_filtrados}
 
-                    if valor in pos_vals:  # si ese valor está en la lista de alias de valores de mecanismos detectados
-                        mecanismos_detectados.add(m)  # Añadimos el MecanismoResistenciaHospital al set
-                        print(f"✓ Mecanismo por columna: {m.mecanismo.nombre}")  # log a consola, mecanismo encontrado
-                        break  # pasamos al siguiente alias
-                    else:
-                        # si no está entre los valores de mecanismos detectados no se incluye y se manda log a consola
-                        print(f"✗ Mecanismo negativo por columna: {m.mecanismo.nombre}")
+    # 3. Índice alias → mecanismo
+    alias_to_mec = {}
 
-    # 2. Detección de subtipos por columnas específicas
-    # Procede de forma similar a la detección de mecanismos
+    for m in mecanismos_filtrados:
+        nombres = {normalize_text(m.mecanismo.nombre)} | {normalize_text(a) for a in m.alias}
+        for nombre in nombres:
+            alias_to_mec[nombre] = m
+
+    # 4. Índice alias → subtipo
+    alias_to_subtipo = {}
+
     for subtipo in subtipos:
+        nombres = {normalize_text(subtipo.subtipo_mecanismo.nombre)} | {
+            normalize_text(a) for a in subtipo.alias
+        }
+        for nombre in nombres:
+            alias_to_subtipo[nombre] = subtipo
 
-        # set de cadenas de texto de alias de subtipos de mecanismo
-        submecs = {normalize_text(subtipo.subtipo_mecanismo.nombre)} | {normalize_text(a) for a in subtipo.alias}
+    # 5. Detección por columnas
+    for col, col_norm in cols_norm.items():
+        valor = normalize_text(str(row[col]))
 
-        # para cada una de las columnas de la fila en cuestión
-        for col in row.index:
-            col_norm = normalize_text(col)
+        if valor not in pos_vals_norm:
+            continue
 
-            # si alguno de los alias de subtipo está entre los nombres de columna de la fila, incorporamos el objeto
-            # SubtipoMecanismoResistenciaHospital al set de subtipos
-            if any(submec in col_norm for submec in submecs):
-                valor = normalize_text(str(row[col]))
+        # mecanismos
+        for alias, m in alias_to_mec.items():
+            if alias in col_norm:
+                mecanismos_detectados.add(m)
+                print(f"✓ Mecanismo por columna: {m.mecanismo.nombre}")
 
-                # si ese valor está en la lista de alias de valores de mecanismos detectados
-                if valor in pos_vals:
-                    subtipos_detectados.add(subtipo)  # Añadimos el subtipo de mecanismo al set
+        # subtipos
+        for alias, subtipo in alias_to_subtipo.items():
+            if alias in col_norm:
+                subtipos_detectados.add(subtipo)
 
-                    # Un subtipo siempre está ligado a un mecanismo-> añadimos el mecanismo al set si no lo está ya
-                    base_mec_id = subtipo.subtipo_mecanismo.mecanismo.id  # obtenemos el id del mecanismo del subtipo
-                    mec_hosp = mec_map.get(base_mec_id)  # encontramos el objeto MecanismoResitenciaHospital asociado
+                base_mec_id = subtipo.subtipo_mecanismo.mecanismo.id
+                mec_hosp = mec_map.get(base_mec_id)
 
-                    # si lo encontramos, lo añadimos al set de mecanismos con log en consola
-                    if mec_hosp:
-                        mecanismos_detectados.add(mec_hosp)
-                    print(
-                        f"✓ Subtipo por columna: {subtipo.subtipo_mecanismo.nombre} (-> {subtipo.subtipo_mecanismo.mecanismo.nombre})")
+                if mec_hosp:
+                    mecanismos_detectados.add(mec_hosp)
 
-                # si el valor no está en la lista de alias de valores de mecanismos detectados -> log en consola y pasamos
-                # al siguiente alias
-                else:
-                    print(f"✗ Subtipo negativo por columna: {subtipo.subtipo_mecanismo.nombre}")
-                break
+                print(
+                    f"✓ Subtipo por columna: {subtipo.subtipo_mecanismo.nombre} "
+                    f"(-> {subtipo.subtipo_mecanismo.mecanismo.nombre})"
+                )
 
-    # 3. Detección en observaciones (texto libre)
+    # 6. Detección en observaciones
     observaciones_col = mapping.get("observaciones")
 
-    # Si se asignó la columna de observaciones en el proceso de carga
     if observaciones_col:
-        # obtenemos el texto en crudo
         texto = str(row.get(observaciones_col, ""))
-
-        # separamos las frases por nuestra constante lista de separadores
         frases = SEPARADORES.split(texto)
-        for frase in frases:  # buscamos entre las frases
-            frase_norm = normalize_text(frase)  # normalizamos la frase
 
-            # realizamos la búsqueda de mecanismos
-            for m in mecanismos:
-                mecs = {normalize_text(m.mecanismo.nombre)} | {normalize_text(a) for a in m.alias}
+        for frase in frases:
+            frase_norm = normalize_text(frase)
 
-                if any(mec in frase_norm for mec in mecs):
-                    # si algún tipo de negación en la frase se infiere que NO se detecta el mecanismo ->
-                    # log a consola y pasamos al siguiente mecanismo
+            # mecanismos
+            for alias, m in alias_to_mec.items():
+                if alias in frase_norm:
+
                     if any(neg in frase_norm for neg in NEGACIONES):
                         print(f"✗ Mecanismo negado: {m.mecanismo.nombre} -> {frase.strip()}")
                         continue
 
-                    mecanismos_detectados.add(m)  # si no está en las negaciones se añade al set de mecanismos
-                    print(f"✓ Mecanismo por observación: {m.mecanismo.nombre}")  # log en consola
+                    mecanismos_detectados.add(m)
+                    print(f"✓ Mecanismo por observación: {m.mecanismo.nombre}")
 
-            # realizamos la misma operación de búsqueda en subtipos de mecanismos
-            for subtipo in subtipos:
-                submecs = {normalize_text(subtipo.subtipo_mecanismo.nombre)} | {normalize_text(a) for a in
-                                                                                subtipo.alias}
-                if any(submec in frase_norm for submec in submecs):
+            # subtipos
+            for alias, subtipo in alias_to_subtipo.items():
+                if alias in frase_norm:
+
                     if any(neg in frase_norm for neg in NEGACIONES):
                         print(f"✗ Subtipo negado: {subtipo.subtipo_mecanismo.nombre} -> {frase.strip()}")
                         continue
-                    subtipos_detectados.add(subtipo)  # añadimos el mecanismo al set de subtipos de mecanismos
 
-                    # si encontramos un subtipo -> añadimos también el mecanismo al set de mecanismos
-                    base_mec_id = subtipo.subtipo_mecanismo.mecanismo_id
+                    subtipos_detectados.add(subtipo)
+
+                    base_mec_id = subtipo.subtipo_mecanismo.mecanismo.id
                     mec_hosp = mec_map.get(base_mec_id)
+
                     if mec_hosp:
                         mecanismos_detectados.add(mec_hosp)
-                    print(
-                        f"✓ Subtipo por observación: {subtipo.subtipo_mecanismo.nombre} (-> {subtipo.subtipo_mecanismo.mecanismo.nombre})")
 
-    return mecanismos_detectados, subtipos_detectados  # devolvemos la tupla de resultados
+                    print(
+                        f"✓ Subtipo por observación: {subtipo.subtipo_mecanismo.nombre} "
+                        f"(-> {subtipo.subtipo_mecanismo.mecanismo.nombre})"
+                    )
+
+    return mecanismos_detectados, subtipos_detectados
+
+

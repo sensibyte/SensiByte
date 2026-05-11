@@ -1949,10 +1949,20 @@ class InformePredefinidoResistenciaPDFView(FormView):
         elementos.append(Paragraph("Informe acumulado de sensibilidad", estilo_titulo))
         elementos.append(Paragraph(f"Hospital: {hospital.nombre}", estilo_normal))
         elementos.append(Paragraph(f"Microorganismo: {microorganismo.microorganismo.nombre}", estilo_normal))
-        elementos.append(Paragraph(f"Año: {fecha_inicial.year}", estilo_normal))
+
+        # Comprobar de cuántos años se están filtrando resultados
+        if fecha_inicial.year == fecha_final.year:
+            texto_anios = f"Año: {fecha_inicial.year}"
+        else:
+            texto_anios = f"Años: {fecha_inicial.year}-{fecha_final.year}"
+
+        elementos.append(Paragraph(texto_anios, estilo_normal))
         elementos.append(
-            Paragraph(f"Periodo: {fecha_inicial.strftime("%d/%m/%Y")} a {fecha_final.strftime("%d/%m/%Y")}",
-                      estilo_normal))
+            Paragraph(
+                f"Periodo: {fecha_inicial.strftime('%d/%m/%Y')} a {fecha_final.strftime('%d/%m/%Y')}",
+                estilo_normal
+            )
+        )
         elementos.append(Spacer(1, 12))
 
         # Si se consideran I como SEI advertirlo en la cabecera
@@ -2763,6 +2773,7 @@ class InformePredefinidoResistenciaPDFView(FormView):
             ["", "<50% de las cepas sensibles"],
             ["↑", "Aumento significativo de la sensibilidad con respecto al periodo anterior, con un nivel de confianza del 95 %"],
             ["↓", "Disminución significativa de la sensibilidad con respecto al periodo anterior, con un nivel de confianza del 95 %"],
+            ["n/a","No aplica"],
         ]
         col_widths = [2 * cm, 23 * cm]
         tabla_leyenda = Table(data, colWidths=col_widths)

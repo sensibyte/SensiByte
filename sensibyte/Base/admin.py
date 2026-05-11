@@ -33,6 +33,7 @@ from .forms import (
     AliasInterpretacionHospitalForm, MecResValoresPositivosHospitalForm
 )
 from .global_admin import *
+from .global_models import Antibiotico
 from .mixins import HospitalFilterAdminMixin
 from .models import (
     AntibioticoHospital, MicroorganismoHospital, PerfilAntibiogramaHospital, PerfilAntibioticoHospital,
@@ -41,6 +42,26 @@ from .models import (
     TipoMuestraHospital, AliasInterpretacionHospital, MecResValoresPositivosHospital
 )
 
+from django.contrib import admin
+
+
+class TipoAntibioticoFilter(admin.SimpleListFilter):
+    title = "tipo de antibiótico"
+    parameter_name = "tipo"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("padres", "Sólo padres"),
+            ("hijos", "Sólo hijos"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "padres":
+            return queryset.filter(antibiotico__es_variante=False)
+        if self.value() == "hijos":
+            return queryset.filter(antibiotico__es_variante=True)
+        return queryset
+
 # Admin AntibioticoHospital
 @admin.register(AntibioticoHospital)
 class AntibioticoHospitalAdmin(HospitalFilterAdminMixin, admin.ModelAdmin):
@@ -48,8 +69,12 @@ class AntibioticoHospitalAdmin(HospitalFilterAdminMixin, admin.ModelAdmin):
     autocomplete_fields = ["antibiotico"]
     list_display = ["hospital", "antibiotico", "get_alias"]
     search_fields = ["antibiotico__nombre"]
-    list_filter = ["antibiotico__familia_antibiotico"]
+    list_filter = [
+        TipoAntibioticoFilter,
+        "antibiotico__familia_antibiotico",
+    ]
 
+    ''' Elimino este método porque realmente necesito ver en admin los hijos
     def get_search_results(self, request, queryset, search_term):
         """
         Sobrescribe get_search_results para aplicar un filtro adicional:
@@ -66,6 +91,7 @@ class AntibioticoHospitalAdmin(HospitalFilterAdminMixin, admin.ModelAdmin):
         else:
             # si es el superusuario puede ver tanto variantes como no variantes
             return super().get_search_results(request, queryset, search_term)
+    '''
 
 # Admin MicroorganismoHospital
 @admin.register(MicroorganismoHospital)

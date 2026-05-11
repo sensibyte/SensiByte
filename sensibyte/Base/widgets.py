@@ -12,7 +12,7 @@ class JSONListWidget(forms.Textarea):
     Al leer datos del formulario, convierte textarea vacío en lista vacía.
     """
 
-    def format_value(self, value)-> str:
+    def format_value(self, value) -> str:
         """
         Este metodo convierte el valor del modelo en texto multilínea para el form.
         'value' es el valor del modelo. Parsea el valor como JSON y después a líneas,
@@ -20,7 +20,7 @@ class JSONListWidget(forms.Textarea):
         Si 'value' ya es lista se utiliza directamente.
         """
         if not value:
-            return ""  # maneja None, [], "" etc.
+            return ""
 
         # Si ya es lista, usamos directamente
         if isinstance(value, list):
@@ -29,27 +29,22 @@ class JSONListWidget(forms.Textarea):
             try:
                 parsed = json.loads(value)
             except (TypeError, json.JSONDecodeError):
-                parsed = []
+                return ""
+
+        # json.loads("null") returns None — guard against it
+        if not parsed:  # handles None, [], "", 0, etc.
+            return ""
 
         return "\n".join(str(item) for item in parsed)
 
-    def value_from_datadict(self, data, files, name)-> list[str]:
+    def value_from_datadict(self, data, files, name) -> str:  # ← returns str, not list
         """
-        Este metodo convierte el valor enviado desde el formulario a la estructura
-        de listas de Python que espera el modelo con su campo JSONField. Los argumentos son:
-        - data (dict): diccionario con los datos enviados en el POST
-        - files (dict): (no usado pero necesario para la sobreescritura)
-        - name (str): nombre del campo en el formulario
-        Devuelve una lista con una cadena por cada línea no vacía del textarea o una lista vacía
-        en el caso de campo vacío en el formulario.
-        Nota: el widget no valida JSON, sólo devuelve la lista de strings preparada para que
-        el campo JSONField lo procese. La validación JSON la realiza el field (forms.JSONField).
-        Para evitar que llegue None al modelo y a la base de datos, se necesita
-        un método clean_... en el formulario que devuelva siempre una lista válida.
+        Convierte el textarea en un JSON string que forms.JSONField puede parsear.
+        Devuelve un JSON string de lista (ej: '["a", "b"]') o '[]' si está vacío.
         """
         raw = data.get(name, "")
         if not raw.strip():
-            return []  # devuelve lista vacía
+            return "[]"  # JSON string
         lines = [line.strip() for line in raw.splitlines() if line.strip()]
-        return lines
+        return json.dumps(lines)  # ← serialize to JSON string
 

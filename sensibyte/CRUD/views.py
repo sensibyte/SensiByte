@@ -253,7 +253,7 @@ class CargarAntibiogramaView(FormView):
 
                 # 4.3 Detectar mecanismos y aplicar resistencias adquiridas
                 mec_detectados, sub_detectados, resultados_finales = self._get_arm(
-                    row, mapping, resultados_antibiograma,
+                    row, mapping, grupo_eucast, resultados_antibiograma,
                     cache["mecanismos"], cache["subtipos"], cache["pos_vals"], microorganismo_file
                 )
 
@@ -721,6 +721,7 @@ class CargarAntibiogramaView(FormView):
         # Buscamos reglas aplicables SOLO para las variantes
         reglas_aplicables = ReglaInterpretacion.objects.filter(
             antibiotico__in=variantes_relacionadas,
+            grupo_eucast=microorganismo.microorganismo.grupo_eucast,
             version_eucast=version_eucast
         )
 
@@ -761,7 +762,7 @@ class CargarAntibiogramaView(FormView):
         return resultados  # devolvemos el diccionario
 
     @staticmethod
-    def _get_arm(row: pandas.Series, mapping: dict,
+    def _get_arm(row: pandas.Series, mapping: dict, grupo_eucast: GrupoEucast,
                  resultados_procesados: dict[int, tuple[str | None, float | None, float | None]],
                  mecanismos: list[MecanismoResistenciaHospital], subtipos: list[SubtipoMecanismoResistenciaHospital],
                  pos_vals: list[MecResValoresPositivosHospital], microorganismo_file: str) -> tuple[
@@ -781,7 +782,7 @@ class CargarAntibiogramaView(FormView):
         # Detectamos los mecanismos y subtipos de mecanismos asociados al registro de fila:
         # detección por columna de mecanismo o por comentario
         mech_detectados, sub_detectados = detect_arm(
-            row, mapping, mecanismos, subtipos, pos_vals
+            row, mapping, grupo_eucast, mecanismos, subtipos, pos_vals
         )
 
         # Búsqueda de resistencias también por el nombre del microorganismo
@@ -1142,7 +1143,7 @@ def apply_filters_to_queryset(queryset, filtros: dict) -> QuerySet[Registro, Reg
     # Evita duplicados cuando hay relaciones ManyToMany
     return queryset.distinct()
 
-@method_decorator(role_required("microbiologo"), name="dispatch")
+@role_required("microbiologo")
 @require_POST
 def eliminar_registros_batch(request):
     """Función de vista encargada de eliminar Registros, en función de la opción seleccionada"""

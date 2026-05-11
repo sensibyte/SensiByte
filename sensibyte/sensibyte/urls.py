@@ -18,8 +18,18 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponse
+
+def robots_txt(request):
+    content = "User-agent: *\nDisallow: /admin/\n"
+    return HttpResponse(content, content_type="text/plain")
+
+def sitemap_xml(request):
+    return HttpResponse('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>', content_type="application/xml")
 
 urlpatterns = [
+    path('robots.txt', robots_txt),
+    path('sitemap.xml', sitemap_xml),
     path('admin/', admin.site.urls),
     path('', include('Base.urls')),
     path('aislados/', include('CRUD.urls')),

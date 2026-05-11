@@ -603,6 +603,9 @@ class ReglaInterpretacion(models.Model):
     class Meta:
         verbose_name = "Regla de interpretación EUCAST"
         verbose_name_plural = "Reglas de interpretación EUCAST"
+        indexes = [
+            models.Index(fields=["antibiotico", "version_eucast", "grupo_eucast"])
+        ]
 
     def apply_to(self, *,
                  antibiotico: Antibiotico,
@@ -732,7 +735,7 @@ class ReglaInterpretacion(models.Model):
             if self.s_cmi_max is not None and cmi <= self.s_cmi_max:
                 return "S"
             # R. Multiplico por 2 porque son diluciones seriadas en base 2. r_cmi_min es >, no ≥
-            if self.r_cmi_min is not None and cmi > 2 * self.r_cmi_min:
+            if self.r_cmi_min is not None and cmi >= 2 * self.r_cmi_min:
                 return "R"
             # I (entre S y R, si ambos están definidos)
             if self.s_cmi_max is not None and self.r_cmi_min is not None and self.s_cmi_max < cmi < 2 * self.r_cmi_min:

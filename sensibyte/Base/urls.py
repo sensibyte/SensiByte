@@ -1,9 +1,9 @@
-# urls.py: configuraciones del esquema de rutas de la aplicaci髇 asociado a las distintas vistas.
-# Pueden ser establecidas a nivel de aplicaci髇, como hacemos con este urls.py propio. Para eso hay que definir la
-# aplicaci髇 que sirve a las llamadas "App:ruta" en app_name e incorporarlas en el urls.py del proyecto a trav閟 del
+# urls.py: configuraciones del esquema de rutas de la aplicaci贸n asociado a las distintas vistas.
+# Pueden ser establecidas a nivel de aplicaci贸n, como hacemos con este urls.py propio. Para eso hay que definir la
+# aplicaci贸n que sirve a las llamadas "App:ruta" en app_name e incorporarlas en el urls.py del proyecto a trav锟絪 del
 # metodo django.urls.include.
-# Cada ruta se puede definir con el metodo django.urls.path que permite asociarle un nombre 鷑ico para facilitar
-# su propio acceso en el c骴igo de la aplicaci髇 (por ejemplo: redirect("nombre"), {% url "nombre" %}, reverse("nombre")...
+# Cada ruta se puede definir con el metodo django.urls.path que permite asociarle un nombre 煤nico para facilitar
+# su propio acceso en el c贸digo de la aplicaci贸n (por ejemplo: redirect("nombre"), {% url "nombre" %}, reverse("nombre")...
 #
 # https://docs.djangoproject.com/en/5.2/topics/http/urls/
 from django.urls import path
