@@ -37,6 +37,8 @@ preferred-citation:
   authors:
     - family-names: "Martínez López"
       given-names: "Jesús"
+    - family-names: "Mata"
+      given-names: "Christian"
   title: "SensiByte"
   version: "1.0.0"
   year: 2026
