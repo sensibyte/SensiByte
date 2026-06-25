@@ -6,6 +6,8 @@ type: software
 authors:
   - family-names: "Martínez López"
     given-names: "Jesús"
+  - family-names: "Mata"
+    given-names: "Christian"
 
 abstract: >
   SensiByte is a Django-based web application for the management,
