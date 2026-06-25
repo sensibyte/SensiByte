@@ -4,7 +4,7 @@ message: "If you use this software, please cite it as follows."
 type: software
 
 authors:
-  - family-names: "Martínez López"
+  - family-names: "Martínez-López"
     given-names: "Jesús"
   - family-names: "Mata"
     given-names: "Christian"
@@ -35,7 +35,7 @@ url: "https://github.com/sensibyte/SensiByte"
 preferred-citation:
   type: software
   authors:
-    - family-names: "Martínez López"
+    - family-names: "Martínez-López"
       given-names: "Jesús"
     - family-names: "Mata"
       given-names: "Christian"
